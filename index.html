@@ -237,30 +237,46 @@
             <!-- Inventory Tab -->
             <div class="tab-content" id="inventory" style="display: none;">
                 <div class="glass-card">
-                    <h5 class="fw-bold mb-4">Delhi Main Hub Inventory</h5>
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-4">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <div class="small text-muted">Item 1 (Stock)</div>
-                                <div class="h4 fw-bold">100</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <div class="small text-muted">Item 2 (Stock)</div>
-                                <div class="h4 fw-bold">100</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <div class="small text-muted">Item 3 (Stock)</div>
-                                <div class="h4 fw-bold">150</div>
-                            </div>
-                        </div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Warehouse Acceptance</h5>
+                        <ul class="nav nav-pills" id="warehouseTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="javascript:void(0)" data-filter="All">All</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="javascript:void(0)" data-filter="Delhi">Delhi</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="javascript:void(0)" data-filter="Madrid">Madrid</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="javascript:void(0)" data-filter="Barcelona">Barcelona</a>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="alert alert-info d-flex align-items-center" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Total stock in Delhi Hub: 350 Units.
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Date</th>
+                                    <th>Destination</th>
+                                    <th>Items</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shipmentTableBody">
+                                <!-- Shipments will be injected here -->
+                                <tr id="empty-shipment-msg">
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        No pending shipments found.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -297,7 +313,7 @@
 
                             <div class="col-md-12 text-end">
                                 <button type="button" class="btn btn-primary" id="btnApproveDispatch">
-                                    <i class="fas fa-check-circle me-2"></i>Approve & Generate Invoice (EUR)
+                                    <i class="fas fa-check-circle me-2"></i>Approve
                                 </button>
                             </div>
                         </div>
@@ -409,7 +425,7 @@
                                         <th width="35%">Material Name</th>
                                         <th width="15%">Current Qty</th>
                                         <th width="15%">Selling Qty</th>
-                                        <th width="20%">Amount in Euro (€)</th>
+                                        <th width="20%">Amount in Euro (₹)</th>
                                         <th width="10%">Action</th>
                                     </tr>
                                 </thead>
