@@ -410,38 +410,83 @@ $(document).ready(function () {
     calculateDistRowAmount(row);
   });
 
-  // Add material row
+  // ========== CENTRALIZED INVENTORY & RETAIL DISPATCH LOGIC ==========
+
+  // 1. Central Inventory State (The "Hardcoded" Data Source)
+  const warehouseInventory = {
+    'Floral Summer Maxidress': 120, // High stock
+    'Silk Embroidered Saree': 45,
+    'High-Waist Trousers': 200,
+    'Designer Kurti Set': 75,
+    'Cotton Fabric': 500,
+    'Silk Thread': 1000,
+    'Metal Buttons': 2000,
+    'Zippers Pack': 150,
+    'Packaging Box': 0, // Out of stock example
+    'Leather Belt': 80
+  };
+
+  const itemPrices = {
+    'Floral Summer Maxidress': 29.99,
+    'Silk Embroidered Saree': 105.00,
+    'High-Waist Trousers': 35.50,
+    'Designer Kurti Set': 42.00,
+    'Cotton Fabric': 15.00,
+    'Silk Thread': 8.50,
+    'Metal Buttons': 2.00,
+    'Zippers Pack': 5.00,
+    'Packaging Box': 3.50,
+    'Leather Belt': 25.00
+  };
+
+  // 2. Helper to generate dropdown options
+  function generateMaterialOptions() {
+    let options = '<option value="" selected disabled>Select Material</option>';
+    for (const [item, qty] of Object.entries(warehouseInventory)) {
+      const price = itemPrices[item] || 0;
+      const disabled = qty <= 0 ? 'disabled' : '';
+      const stockText = qty <= 0 ? '(Out of Stock)' : `(${qty} Available)`;
+      options += `<option value="${item}" data-current="${qty}" data-price="${price.toFixed(2)}" ${disabled}>${item} ${stockText}</option>`;
+    }
+    return options;
+  }
+
+  // 3. Refresh all dropdowns (Call this on load)
+  function refreshDistributorDropdowns() {
+    // Update existing rows
+    $('.dist-material-name').each(function () {
+      // Keep selected value if any
+      const currentVal = $(this).val();
+      $(this).html(generateMaterialOptions());
+      if (currentVal) $(this).val(currentVal);
+    });
+  }
+
+  // Add material row (Updated to use Dynamic Options)
   $("#addDistMaterialRowBtn").click(function () {
     distMaterialRowCounter++;
     const newRow = `
             <tr class="dist-material-row">
                 <td class="text-center dist-material-number">${distMaterialRowCounter}</td>
                 <td>
-                    <select class="form-select dist-material-name" required>
-                        <option value="" selected disabled>Select Material</option>
-                        <option value="Floral Summer Maxidress" data-current="100" data-price="29.99">Floral Summer Maxidress</option>
-                        <option value="Silk Embroidered Saree" data-current="100" data-price="105.00">Silk Embroidered Saree</option>
-                        <option value="High-Waist Trousers" data-current="150" data-price="35.50">High-Waist Trousers</option>
-                        <option value="Designer Kurti Set" data-current="80" data-price="42.00">Designer Kurti Set</option>
-                        <option value="Cotton Fabric" data-current="200" data-price="15.00">Cotton Fabric</option>
-                        <option value="Silk Thread" data-current="500" data-price="8.50">Silk Thread</option>
-                        <option value="Metal Buttons" data-current="1000" data-price="2.00">Metal Buttons</option>
-                        <option value="Zippers Pack" data-current="300" data-price="5.00">Zippers Pack</option>
-                        <option value="Packaging Box" data-current="250" data-price="3.50">Packaging Box</option>
-                        <option value="Leather Belt" data-current="120" data-price="25.00">Leather Belt</option>
+                    <select class="form-select dist-material-name bg-white" required>
+                        ${generateMaterialOptions()}
                     </select>
                 </td>
                 <td>
-                    <input type="number" class="form-control bg-light dist-current-qty" readonly value="0">
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control bg-light dist-current-qty text-center" readonly value="0">
+                        <span class="input-group-text bg-light border-start-0 text-muted">pcs</span>
+                    </div>
                 </td>
                 <td>
-                    <input type="number" class="form-control dist-selling-qty" min="1" value="0" required>
+                    <input type="number" class="form-control dist-selling-qty fw-bold text-primary" min="1" value="0" required>
                 </td>
                 <td>
-                    <input type="text" class="form-control bg-light dist-amount" readonly value="₹0.00">
+                    <input type="text" class="form-control bg-transparent border-0 fw-bold dist-amount" readonly value="₹0.00">
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-dist-material-row">
+                    <button type="button" class="btn btn-sm btn-light text-danger remove-dist-material-row rounded-circle hover-scale">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -450,6 +495,22 @@ $(document).ready(function () {
     $("#distributorMaterialRows").append(newRow);
     updateDistMaterialRowNumbers();
   });
+
+  // INITIALIZATION ON LOAD
+  // Populate the dropdowns immediately
+  refreshDistributorDropdowns();
+
+  // PRE-FILL FIRST ROW WITH DEMO DATA (As requested by User)
+  setTimeout(() => {
+    // Auto-select "Seller 1"
+    $('#distributorName').val('Seller 1');
+
+    // Auto-fill first row if empty
+    const firstRow = $('#distributorMaterialRows tr').first();
+    // Select 'Floral Summer Maxidress'
+    const select = firstRow.find('.dist-material-name');
+    select.val('Floral Summer Maxidress').change();
+  }, 100);
 
   // Remove material row
   $(document).on("click", ".remove-dist-material-row", function () {
