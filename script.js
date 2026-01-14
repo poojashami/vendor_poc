@@ -581,6 +581,80 @@ $(document).ready(function () {
     }
   };
 
+
+
+  // Warehouse Address Mapping
+  const warehouseAddresses = {
+    'Delhi': { name: 'Delhi Main Hub', address: 'Okhla Phase III, New Delhi, India' },
+    'Madrid': { name: 'Madrid Distribution Center', address: 'Calle de Alcalá, 45, Madrid, Spain' },
+    'Barcelona': { name: 'Barcelona Logistics Hub', address: 'Carrer de la Marina, 18, Barcelona, Spain' }
+  };
+
+  // Vendor Address Mapping (Mock for now, assuming current user is Vendor 1)
+  const currentVendor = {
+    name: 'Vendor 1 (Women Wear)',
+    address: 'Fashion Street, Delhi, India'
+  };
+
+  // Global function to view shipment details
+  window.viewShipmentDetails = function (id) {
+    const shipment = shipments.find(s => s.id === id);
+    if (!shipment) return;
+
+    // Populate Order Info
+    $('#modalOrderId').text(shipment.id);
+    $('#modalDate').text(shipment.dispatchDate || 'N/A');
+
+    // Resolve Warehouse Details
+    const whInfo = warehouseAddresses[shipment.warehouse] || { name: shipment.warehouse, address: 'Main Warehouse' };
+
+    // Update "To" Section
+    $('#modalWarehouse').text(whInfo.name);
+    $('#modalWarehouseAddress').text(whInfo.address); // Need to add this ID to HTML
+
+    // Update "From" Section (Static for this POC or mock)
+    // If shipments had vendorId we could map it, but for now we default to the current vendor context
+    // or if the hardcoded shipments imply different vendors we could add that property.
+    // Let's assume the hardcoded shipments are from "Vendor 1" for consistency, or we add vendor property.
+
+    // For now, I will update the HTML to have IDs for From section too.
+    $('#modalFromVendor').text(currentVendor.name);
+    $('#modalFromAddress').text(currentVendor.address);
+
+    $('#modalGrandTotal').text(shipment.grandTotal);
+
+    // Status Badge
+    let badge = shipment.status === 'Pending'
+      ? '<span class="badge bg-warning text-dark">Pending Acceptance</span>'
+      : '<span class="badge bg-success">Received</span>';
+    $('#modalStatusBadge').html(badge);
+
+    // Populate Items Table
+    const itemsBody = $('#modalItemsTable');
+    itemsBody.empty();
+
+    shipment.items.forEach(item => {
+      const priceDisplay = item.price ? `₹${item.price}` : '-';
+      const totalDisplay = item.total ? item.total : '-';
+
+      const row = `
+              <tr>
+                  <td>${item.name}</td>
+                  <td class="text-end">${item.qty}</td>
+                  <td class="text-end">${priceDisplay}</td>
+                  <td class="text-end">${totalDisplay}</td>
+              </tr>
+          `;
+      itemsBody.append(row);
+    });
+
+    // Show Modal
+    const modal = new bootstrap.Modal(document.getElementById('shipmentDetailsModal'));
+    modal.show();
+  };
+
+
+
   function renderShipments(filter = 'All') {
     const tableBody = $('#shipmentTableBody');
     tableBody.empty();
@@ -592,12 +666,12 @@ $(document).ready(function () {
 
     if (filteredShipments.length === 0) {
       tableBody.html(`
-              <tr id="empty-shipment-msg">
-                  <td colspan="7" class="text-center py-4 text-muted">
-                      No shipments found for ${filter}.
-                  </td>
-              </tr>
-          `);
+               <tr id="empty-shipment-msg">
+                   <td colspan="7" class="text-center py-4 text-muted">
+                       No shipments found for ${filter}.
+                   </td>
+               </tr>
+           `);
       // Removed return to ensure table structure remains if needed
       return;
     }
@@ -614,45 +688,45 @@ $(document).ready(function () {
       if (s.status === 'Pending') {
         statusBadge = '<span class="badge bg-warning text-dark">Pending Acceptance</span>';
         actionBtn = `
-                  <button class="btn btn-sm btn-success me-1" onclick="acceptShipment('${s.id}')">
-                      <i class="fas fa-check me-1"></i> Accept
-                  </button>
-                  <button class="btn btn-sm btn-outline-primary" onclick="alert('Viewing Details for ${s.id}')">
-                      View
-                  </button>
-              `;
+                   <button class="btn btn-sm btn-success me-1" onclick="acceptShipment('${s.id}')">
+                       <i class="fas fa-check me-1"></i> Accept
+                   </button>
+                   <button class="btn btn-sm btn-outline-primary" onclick="viewShipmentDetails('${s.id}')">
+                       View
+                   </button>
+               `;
       } else {
         statusBadge = '<span class="badge bg-success">Received</span>';
         actionBtn = `
-                  <button class="btn btn-sm btn-outline-secondary" disabled>
-                      <i class="fas fa-check-double me-1"></i> Done
-                  </button>
-                  <button class="btn btn-sm btn-outline-primary" onclick="alert('Viewing Details for ${s.id}')">
-                      View
-                  </button>
-              `;
+                   <button class="btn btn-sm btn-outline-secondary" disabled>
+                       <i class="fas fa-check-double me-1"></i> Done
+                   </button>
+                   <button class="btn btn-sm btn-outline-primary" onclick="viewShipmentDetails('${s.id}')">
+                       View
+                   </button>
+               `;
       }
 
       const row = `
-              <tr>
-                  <td><span class="badge bg-secondary">${s.id}</span></td>
-                  <td>${s.dispatchDate || 'N/A'}</td>
-                  <td>${s.warehouse}</td>
-                  <td>
-                      <div class="d-flex flex-column">
-                          <span class="fw-bold small">${itemSummary}</span>
-                          <span class="text-muted small">${s.items.length} items</span>
-                      </div>
-                  </td>
-                  <td class="fw-bold">${s.grandTotal}</td>
-                  <td>${statusBadge}</td>
-                  <td>
-                      <div class="d-flex">
-                          ${actionBtn}
-                      </div>
-                  </td>
-              </tr>
-          `;
+               <tr>
+                   <td><span class="badge bg-secondary">${s.id}</span></td>
+                   <td>${s.dispatchDate || 'N/A'}</td>
+                   <td>${s.warehouse}</td>
+                   <td>
+                       <div class="d-flex flex-column">
+                           <span class="fw-bold small">${itemSummary}</span>
+                           <span class="text-muted small">${s.items.length} items</span>
+                       </div>
+                   </td>
+                   <td class="fw-bold">${s.grandTotal}</td>
+                   <td>${statusBadge}</td>
+                   <td>
+                       <div class="d-flex">
+                           ${actionBtn}
+                       </div>
+                   </td>
+               </tr>
+           `;
       tableBody.append(row);
     });
   }
