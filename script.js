@@ -68,10 +68,166 @@ $(document).ready(function () {
       id: 10,
       name: "Cotton Scarf",
       vendor: "Vendor 3 (Accessories)",
-      price: "₹15.00",
       img: "https://images.unsplash.com/photo-1534452283893-eb0a010d7a0c?auto=format&fit=crop&q=80&w=400",
     },
   ];
+
+  // Global Shipments Array (Moved to Top for Access)
+  const shipments = [
+    {
+      id: "ORD-8821",
+      dispatchDate: "2026-01-10",
+      warehouse: "Delhi",
+      items: [
+        { name: "Cotton Fabric", qty: 500 },
+        { name: "Zippers Pack", qty: 200 },
+      ],
+      grandTotal: "₹7,500.00",
+      status: "Pending",
+    },
+    {
+      id: "ORD-9932",
+      dispatchDate: "2026-01-12",
+      warehouse: "Madrid",
+      items: [{ name: "Floral Summer Maxidress", qty: 50 }],
+      grandTotal: "₹1,499.50",
+      status: "Pending",
+    },
+    {
+      id: "ORD-7745",
+      dispatchDate: "2026-01-14",
+      warehouse: "Barcelona",
+      items: [
+        { name: "Silk Embroidered Saree", qty: 20 },
+        { name: "Jewelry Set", qty: 10 },
+      ],
+      grandTotal: "₹2,285.00",
+      status: "Pending",
+    },
+  ];
+
+  // ========== POST-DISPATCH STATE (Retail & Invoices) ==========
+  const retailerInventory = {
+    Madrid: [],
+    Barcelona: [],
+  };
+
+  const generatedInvoices = [];
+
+  function renderRetailAndInvoices() {
+    // 1. Render Retail Stock Table
+    const levelRows = [];
+    // Calculate summaries per retailer (Destination Hub)
+    for (const [seller, items] of Object.entries(retailerInventory)) {
+      if (items.length === 0) continue;
+
+      let totalQty = 0;
+      let totalVal = 0;
+      items.forEach((i) => {
+        totalQty += i.qty;
+        totalVal += i.totalEUR;
+      });
+
+      levelRows.push(`
+        <tr>
+          <td><span class="fw-bold text-primary">${seller}</span></td>
+          <td>${new Date().toLocaleDateString()}</td>
+          <td>${items.length} types</td>
+          <td class="text-center fw-bold">${totalQty}</td>
+          <td class="text-end fw-bold">€${totalVal.toFixed(2)}</td>
+        </tr>
+      `);
+    }
+
+    if (levelRows.length === 0) {
+      $("#retailLevelTableBody").html(
+        '<tr><td colspan="5" class="text-center text-muted py-4">No retail stock updates yet.</td></tr>'
+      );
+    } else {
+      $("#retailLevelTableBody").html(levelRows.join(""));
+    }
+
+    // 2. Render Invoices Table
+    const invRows = generatedInvoices.map(
+      (inv) => `
+      <tr>
+        <td><span class="badge bg-light text-dark border">${inv.id}</span></td>
+        <td>${inv.retailer}</td>
+        <td>${inv.date}</td>
+        <td class="fw-bold text-success">€${inv.amount.toFixed(2)}</td>
+        <td><span class="badge bg-success">Invoiced</span></td>
+        <td><button class="btn btn-sm btn-outline-primary" onclick="viewInvoice('${
+          inv.id
+        }')"><i class="fas fa-eye"></i></button></td>
+      </tr>
+    `
+    );
+
+    if (invRows.length === 0) {
+      $("#invoiceTableBody").html(
+        '<tr><td colspan="6" class="text-center text-muted py-4">No invoices generated yet.</td></tr>'
+      );
+    } else {
+      $("#invoiceTableBody").html(invRows.join(""));
+    }
+  }
+
+  // Global Function to View Invoice (Modal Version)
+  window.viewInvoice = function (id) {
+    const inv = generatedInvoices.find((i) => i.id === id);
+    if (!inv) return;
+
+    // Populate Modal Elements
+    $("#modalInvoiceId").text("#" + inv.id);
+    $("#modalInvoiceTo").text(inv.retailer);
+    $("#modalInvoiceDate").text(inv.date);
+
+    const itemsBody = $("#modalInvoiceItemsBody");
+    itemsBody.empty();
+
+    let calculatedSubtotal = 0;
+
+    inv.items.forEach((item) => {
+      // Logic for Multi-Currency Handling
+      let priceEUR = 0;
+      let totalEUR = 0;
+
+      if (typeof item.amount === "number") {
+        // NEW LOGIC: Stored directly as Euro
+        totalEUR = item.amount;
+        priceEUR = totalEUR / parseInt(item.sellingQty);
+      } else {
+        // OLD LOGIC: Stored as INR String (Backward Compatibility)
+        const priceINR =
+          parseFloat(item.amount.replace("₹", "").replace(/,/g, "")) /
+          parseInt(item.sellingQty);
+        priceEUR = priceINR / 90;
+        totalEUR = priceEUR * parseInt(item.sellingQty);
+      }
+
+      calculatedSubtotal += totalEUR;
+
+      itemsBody.append(`
+            <tr>
+                <td class="ps-3 fw-medium">${item.name}</td>
+                <td class="text-center">${item.sellingQty}</td>
+                <td class="text-end">€${priceEUR.toFixed(2)}</td>
+                <td class="text-end pe-3 fw-bold">€${totalEUR.toFixed(2)}</td>
+            </tr>
+          `);
+    });
+
+    const tax = calculatedSubtotal * 0.15;
+    const grandTotal = calculatedSubtotal + tax;
+
+    $("#modalInvoiceSubtotal").text("€" + calculatedSubtotal.toFixed(2));
+    $("#modalInvoiceTax").text("€" + tax.toFixed(2));
+    $("#modalInvoiceTotal").text("€" + grandTotal.toFixed(2));
+
+    // Show Modal
+    const modal = new bootstrap.Modal(document.getElementById("invoiceModal"));
+    modal.show();
+  };
 
   // Render Product Grid
   function renderProducts() {
@@ -222,8 +378,9 @@ $(document).ready(function () {
       const card = `
                 <div class="col-6 col-md-4 col-lg-3">
                     <div class="material-card h-100" data-id="${p.id}">
-                        <div class="material-img" style="background-image: url('${p.img
-        }')">
+                        <div class="material-img" style="background-image: url('${
+                          p.img
+                        }')">
                             <div class="check-overlay">
                                 <i class="fas fa-check"></i>
                             </div>
@@ -233,8 +390,9 @@ $(document).ready(function () {
                             <div class="d-flex card-inputs" onclick="event.stopPropagation()">
                                 <div class="mb-2">
                                     <label class="form-label small mb-0">Price (₹)</label>
-                                    <input type="number" class="form-control form-control-sm mat-price" value="${p.defaultPrice
-        }" step="0.01" min="0">
+                                    <input type="number" class="form-control form-control-sm mat-price" value="${
+                                      p.defaultPrice
+                                    }" step="0.01" min="0">
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small mb-0">Quantity</label>
@@ -243,8 +401,8 @@ $(document).ready(function () {
                                 <div class=" bg-light p-2 rounded">
                                    <label class="form-label small mb-0">Total</label></br>
                                     <span class="small fw-bold mat-total text-primary">₹${p.defaultPrice.toFixed(
-          2
-        )}</span>
+                                      2
+                                    )}</span>
                                 </div>
                             </div>
                         </div>
@@ -331,17 +489,45 @@ $(document).ready(function () {
     };
 
     console.log("Submitted Data:", formData);
+
+    // Create new shipment object for Warehouse Acceptance
+    const newShipmentId = "ORD-" + Math.floor(1000 + Math.random() * 9000); // Random ID
+    const newShipment = {
+      id: newShipmentId,
+      dispatchDate:
+        formData.dispatchDate || new Date().toISOString().split("T")[0],
+      warehouse: formData.warehouse || "Delhi",
+      items: items, // reuse the items array
+      grandTotal: formData.grandTotal,
+      status: "Pending",
+    };
+
+    // Push to global shipments array
+    shipments.unshift(newShipment); // Add to top
+
     alert(
-      "Order Submitted Successfully!\nItems: " +
-      items.length +
-      "\nTotal: " +
-      formData.grandTotal
+      "Order Submitted Successfully!\n\n" +
+        "Order ID: " +
+        newShipmentId +
+        "\n" +
+        "Sent to: " +
+        newShipment.warehouse +
+        " Warehouse\n" +
+        "Total: " +
+        formData.grandTotal +
+        "\n\n" +
+        "Check 'Warehouse Acceptance' tab to approve stock."
     );
 
-    // Reset (Optional)
-    // $('.material-card').removeClass('selected');
-    // updateSelectionState();
-    // $('#materialForm')[0].reset();
+    // Reset Form
+    $(".material-card").removeClass("selected");
+    updateSelectionState();
+    $("#materialForm")[0].reset();
+    $("#material-selection-grid").empty();
+    renderMaterialGrid(); // Re-render to clear selection visuals
+
+    // Trigger re-render of shipments (if user switches tab immediately)
+    // However, keeping data sync is key.
   });
 
   // ========== MATERIAL DISTRIBUTOR LOGIC (REDESIGNED) ==========
@@ -414,125 +600,191 @@ $(document).ready(function () {
 
   // 1. Central Inventory State (The "Hardcoded" Data Source)
   const warehouseInventory = {
-    'Floral Summer Maxidress': 120, // High stock
-    'Silk Embroidered Saree': 45,
-    'High-Waist Trousers': 200,
-    'Designer Kurti Set': 75,
-    'Cotton Fabric': 500,
-    'Silk Thread': 1000,
-    'Metal Buttons': 2000,
-    'Zippers Pack': 150,
-    'Packaging Box': 0, // Out of stock example
-    'Leather Belt': 80
+    "Floral Summer Maxidress": 120, // High stock
+    "Silk Embroidered Saree": 45,
+    "High-Waist Trousers": 200,
+    "Designer Kurti Set": 75,
+    "Cotton Fabric": 500,
+    "Silk Thread": 1000,
+    "Metal Buttons": 2000,
+    "Zippers Pack": 150,
+    "Packaging Box": 0, // Out of stock example
+    "Leather Belt": 80,
   };
 
   const itemPrices = {
-    'Floral Summer Maxidress': 29.99,
-    'Silk Embroidered Saree': 105.00,
-    'High-Waist Trousers': 35.50,
-    'Designer Kurti Set': 42.00,
-    'Cotton Fabric': 15.00,
-    'Silk Thread': 8.50,
-    'Metal Buttons': 2.00,
-    'Zippers Pack': 5.00,
-    'Packaging Box': 3.50,
-    'Leather Belt': 25.00
+    "Floral Summer Maxidress": 29.99,
+    "Silk Embroidered Saree": 105.0,
+    "High-Waist Trousers": 35.5,
+    "Designer Kurti Set": 42.0,
+    "Cotton Fabric": 15.0,
+    "Silk Thread": 8.5,
+    "Metal Buttons": 2.0,
+    "Zippers Pack": 5.0,
+    "Packaging Box": 3.5,
+    "Leather Belt": 25.0,
   };
 
-  // 2. Helper to generate dropdown options
-  function generateMaterialOptions() {
-    let options = '<option value="" selected disabled>Select Material</option>';
-    for (const [item, qty] of Object.entries(warehouseInventory)) {
-      const price = itemPrices[item] || 0;
-      const disabled = qty <= 0 ? 'disabled' : '';
-      const stockText = qty <= 0 ? '(Out of Stock)' : `(${qty} Available)`;
-      options += `<option value="${item}" data-current="${qty}" data-price="${price.toFixed(2)}" ${disabled}>${item} ${stockText}</option>`;
-    }
-    return options;
-  }
+  // ========== SELLER ORDERS / RETAIL DISPATCH LOGIC (VISUAL GRID) ==========
 
-  // 3. Refresh all dropdowns (Call this on load)
-  function refreshDistributorDropdowns() {
-    // Update existing rows
-    $('.dist-material-name').each(function () {
-      // Keep selected value if any
-      const currentVal = $(this).val();
-      $(this).html(generateMaterialOptions());
-      if (currentVal) $(this).val(currentVal);
-    });
-  }
+  // Function to render the Distributor Product Grid (from Warehouse Inventory)
+  function renderDistributorGrid() {
+    const container = $("#distributor-product-grid");
+    container.empty();
 
-  // Add material row (Updated to use Dynamic Options)
-  $("#addDistMaterialRowBtn").click(function () {
-    distMaterialRowCounter++;
-    const newRow = `
-            <tr class="dist-material-row">
-                <td class="text-center dist-material-number">${distMaterialRowCounter}</td>
-                <td>
-                    <select class="form-select dist-material-name bg-white" required>
-                        ${generateMaterialOptions()}
-                    </select>
-                </td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <input type="number" class="form-control bg-light dist-current-qty text-center" readonly value="0">
-                        <span class="input-group-text bg-light border-start-0 text-muted">pcs</span>
+    // Iterate over warehouse inventory
+    let index = 0;
+    for (const [itemName, currentStock] of Object.entries(warehouseInventory)) {
+      index++;
+      // Try to find image from products array, or use a default
+      const productMatch = products.find((p) => p.name === itemName);
+      const imgUrl = productMatch
+        ? productMatch.img
+        : "https://placehold.co/400x300?text=No+Image";
+
+      const isOutOfStock = currentStock <= 0;
+      const opacityClass = isOutOfStock ? "opacity-50 grayscale" : "";
+
+      const card = `
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="material-card h-100 ${opacityClass}" data-name="${itemName}" style="${
+        isOutOfStock ? "pointer-events: none;" : ""
+      }">
+                <div class="material-img position-relative" style="background-image: url('${imgUrl}')">
+                    <!-- Stock Top Left -->
+                    <span class="position-absolute top-0 start-0 m-2 badge bg-primary shadow-sm">Stock: ${currentStock}</span>
+                    
+                    <!-- Checkbox Top Right -->
+                    <div class="position-absolute top-0 end-0 m-2">
+                         <div class="form-check">
+                            <input class="form-check-input card-checkbox" type="checkbox" style="transform: scale(1.2); cursor: pointer;" ${
+                              isOutOfStock ? "disabled" : ""
+                            }>
+                        </div>
                     </div>
-                </td>
-                <td>
-                    <input type="number" class="form-control dist-selling-qty fw-bold text-primary" min="1" value="0" required>
-                </td>
-                <td>
-                    <input type="text" class="form-control bg-transparent border-0 fw-bold dist-amount" readonly value="₹0.00">
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-light text-danger remove-dist-material-row rounded-circle hover-scale">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    $("#distributorMaterialRows").append(newRow);
-    updateDistMaterialRowNumbers();
+                </div>
+                <div class="material-details">
+                    <h6 class="fw-bold mb-1 show-name text-truncate" title="${itemName}">${itemName}</h6>
+                    
+                    <!-- Inputs (Hidden by default) -->
+                    <div class="card-inputs mt-2" style="display: none;" onclick="event.stopPropagation()">
+                        <div class="row g-1 align-items-end">
+                            <!-- Price Input (Euro) -->
+                            <div class="col-4">
+                                <div class="mb-0">
+                                    <label class="form-label small mb-0">Price (€)</label>
+                                    <input type="number" class="form-control form-control-sm dist-price px-1 text-center" 
+                                           placeholder="0" step="0.01" min="0">
+                                </div>
+                            </div>
+
+                            <!-- Qty Input -->
+                             <div class="col-4">
+                                <div class="mb-0">
+                                    <label class="form-label small mb-0 d-flex justify-content-between">
+                                        <span>Qty</span>
+                                    </label>
+                                    <input type="number" class="form-control form-control-sm dist-qty px-1 text-center" 
+                                           value="1" min="1" max="${currentStock}" 
+                                           ${isOutOfStock ? "disabled" : ""}>
+                                </div>
+                            </div>
+                            
+                            <!-- Total -->
+                            <div class="col-4">
+                                <div class="bg-light p-1 rounded border border-light text-center h-100 d-flex flex-column justify-content-center">
+                                   <label class="form-label small mb-0 lh-1">Total</label>
+                                    <span class="small fw-bold dist-total text-primary mt-1">€0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      `;
+      container.append(card);
+    }
+  }
+
+  // Initial Render
+  renderDistributorGrid();
+
+  // Interaction: Select Card (Toggle)
+  $(document).on(
+    "click",
+    "#distributor-product-grid .material-card",
+    function (e) {
+      if ($(e.target).closest(".card-inputs").length) return; // Ignore clicks inside inputs
+      if ($(e.target).hasClass("card-checkbox")) {
+        // Did click the checkbox directly? Let it propagate or handle logic here
+        // The default checkbox behavior handles the 'checked' state visually
+        // We just need to sync the card UI
+      } else {
+        // Clicked card body/image -> Toggle checkbox
+        const checkbox = $(this).find(".card-checkbox");
+        checkbox.prop("checked", !checkbox.prop("checked"));
+      }
+
+      const isSelected = $(this).find(".card-checkbox").prop("checked");
+      const inputSection = $(this).find(".card-inputs");
+
+      if (isSelected) {
+        $(this).addClass("selected");
+        inputSection.slideDown(200); // Animation for nice effect
+      } else {
+        $(this).removeClass("selected");
+        inputSection.slideUp(200);
+        // Optional: Reset inputs on deselect? No, keep them for UX
+      }
+      updateDistributorSelectionState();
+    }
+  );
+
+  // Interaction: Input Change (Price or Qty)
+  $(document).on("input", ".dist-qty, .dist-price", function () {
+    const card = $(this).closest(".material-card");
+    const stock = parseInt(card.find(".dist-qty").attr("max"));
+
+    // Qty Validation
+    let qty = parseInt(card.find(".dist-qty").val()) || 0;
+    if (qty > stock) {
+      alert(`Cannot dispatch more than available stock (${stock})!`);
+      qty = stock;
+      card.find(".dist-qty").val(qty);
+    }
+    if (qty < 0) qty = 0;
+
+    // Price
+    const price = parseFloat(card.find(".dist-price").val()) || 0;
+
+    // Calculate Row Total
+    const total = price * qty;
+    card.find(".dist-total").text("€" + total.toFixed(2));
+
+    // Auto-select card if inputs actvated
+    if (!card.hasClass("selected") && price > 0 && qty > 0) {
+      card.addClass("selected");
+    }
+    updateDistributorSelectionState();
   });
 
-  // INITIALIZATION ON LOAD
-  // Populate the dropdowns immediately
-  refreshDistributorDropdowns();
+  function updateDistributorSelectionState() {
+    let grandTotal = 0;
+    $("#distributor-product-grid .material-card.selected").each(function () {
+      const price = parseFloat($(this).find(".dist-price").val()) || 0;
+      const qty = parseInt($(this).find(".dist-qty").val()) || 0;
+      grandTotal += price * qty;
+    });
+    $("#distGrandTotal").text("€" + grandTotal.toFixed(2));
+  }
 
-  // PRE-FILL FIRST ROW WITH DEMO DATA (As requested by User)
-  setTimeout(() => {
-    // Auto-select "Seller 1"
-    $('#distributorName').val('Seller 1');
-
-    // Auto-fill first row if empty
-    const firstRow = $('#distributorMaterialRows tr').first();
-    // Select 'Floral Summer Maxidress'
-    const select = firstRow.find('.dist-material-name');
-    select.val('Floral Summer Maxidress').change();
-  }, 100);
-
-  // Remove material row
-  $(document).on("click", ".remove-dist-material-row", function () {
-    $(this).closest(".dist-material-row").remove();
-    updateDistMaterialRowNumbers();
-    calculateDistGrandTotal();
-  });
-
-  // Cancel button
+  // Cancel Button
   $("#cancelDistBtn").click(function () {
-    if (confirm("Are you sure you want to cancel? All data will be lost.")) {
+    if (confirm("Clear all selections?")) {
+      renderDistributorGrid();
+      updateDistributorSelectionState();
       $("#distributorForm")[0].reset();
-      $("#distributorMaterialRows .dist-material-row:not(:first)").remove();
-      $(
-        "#distributorMaterialRows .dist-material-row:first .dist-current-qty"
-      ).val("0");
-      $("#distributorMaterialRows .dist-material-row:first .dist-amount").val(
-        "₹0.00"
-      );
-      $("#distGrandTotal").text("₹0.00");
-      distMaterialRowCounter = 1;
-      updateDistMaterialRowNumbers();
     }
   });
 
@@ -540,138 +792,156 @@ $(document).ready(function () {
   $("#distributorForm").submit(function (e) {
     e.preventDefault();
 
-    // Validate distributor selected
-    if (!$("#distributorName").val()) {
-      alert("Please select a distributor!");
+    // Validate Destination
+    const destination = $("input[name='destinationHub']:checked").val();
+    if (!destination) {
+      alert("Please select a valid destination (Madrid or Barcelona)!");
       return;
     }
 
     // Validate at least one material
-    let hasValidMaterial = false;
-    $("#distributorMaterialRows .dist-material-row").each(function () {
-      const materialName = $(this).find(".dist-material-name").val();
-      const sellingQty = parseInt($(this).find(".dist-selling-qty").val()) || 0;
-      if (materialName && sellingQty > 0) {
-        hasValidMaterial = true;
-      }
-    });
-
-    if (!hasValidMaterial) {
-      alert("Please add at least one material with selling quantity!");
+    const selectedCards = $(
+      "#distributor-product-grid .material-card.selected"
+    );
+    if (selectedCards.length === 0) {
+      alert("Please select at least one item to dispatch!");
       return;
     }
 
-    // Collect form data
+    // Collect Data
     const materials = [];
-    $("#distributorMaterialRows .dist-material-row").each(function () {
-      const materialName = $(this).find(".dist-material-name").val();
-      const currentQty = $(this).find(".dist-current-qty").val();
-      const sellingQty = $(this).find(".dist-selling-qty").val();
-      const amount = $(this).find(".dist-amount").val();
+    selectedCards.each(function () {
+      const name = $(this).data("name");
+      const sellingQty = parseInt($(this).find(".dist-qty").val()) || 0;
+      const priceEUR = parseFloat($(this).find(".dist-price").val()) || 0;
+      const totalEUR = priceEUR * sellingQty;
 
-      if (materialName && parseInt(sellingQty) > 0) {
+      if (sellingQty > 0) {
         materials.push({
-          name: materialName,
-          currentQty: currentQty,
+          name: name,
           sellingQty: sellingQty,
-          amount: amount,
+          priceEUR: priceEUR,
+          totalEUR: totalEUR,
         });
       }
     });
 
-    const distributionData = {
-      distributor: $("#distributorName").val(),
-      materials: materials,
-      totalAmount: $("#distGrandTotal").text(),
-      remarks: $("#distRemarks").val(),
-    };
-
-    console.log("Distribution submitted:", distributionData);
-
-    let summary = "Distributor: " + distributionData.distributor + "\n\n";
-    summary += "Materials:\n";
-    materials.forEach((m, i) => {
-      summary += i + 1 + ". " + m.name + "\n";
-      summary +=
-        "   Selling Qty: " + m.sellingQty + " | Amount: " + m.amount + "\n";
-    });
-    summary += "\nTotal Amount: " + distributionData.totalAmount;
-
-    alert("Distribution Submitted Successfully!\n\n" + summary);
-  });
-
-  // ========== WAREHOUSE ACCEPTANCE LOGIC (SAFE ADDITION) ==========
-  const shipments = [
-    {
-      id: 'ORD-8821',
-      dispatchDate: '2026-01-10',
-      warehouse: 'Delhi',
-      items: [{ name: 'Cotton Fabric', qty: 500 }, { name: 'Zippers Pack', qty: 200 }],
-      grandTotal: '₹7,500.00',
-      status: 'Pending'
-    },
-    {
-      id: 'ORD-9932',
-      dispatchDate: '2026-01-12',
-      warehouse: 'Madrid',
-      items: [{ name: 'Floral Summer Maxidress', qty: 50 }],
-      grandTotal: '₹1,499.50',
-      status: 'Pending'
-    },
-    {
-      id: 'ORD-7745',
-      dispatchDate: '2026-01-14',
-      warehouse: 'Barcelona',
-      items: [{ name: 'Silk Embroidered Saree', qty: 20 }, { name: 'Jewelry Set', qty: 10 }],
-      grandTotal: '₹2,285.00',
-      status: 'Pending'
+    if (materials.length === 0) {
+      alert("Invalid quantities selected!");
+      return;
     }
-  ];
 
+    const totalDispatchValue = materials.reduce(
+      (sum, m) => sum + m.totalEUR,
+      0
+    );
+
+    // --- POST DISPATCH ACTIONS ---
+
+    // 1. Deduct from Central Inventory (Delhi)
+    materials.forEach((m) => {
+      if (warehouseInventory[m.name]) {
+        warehouseInventory[m.name] -= m.sellingQty; // Reduce Stock
+      }
+
+      // Update "Retailer/Destination" Stock (Mock)
+      if (!retailerInventory[destination]) retailerInventory[destination] = [];
+      retailerInventory[destination].push({
+        name: m.name,
+        qty: m.sellingQty,
+        totalEUR: m.totalEUR,
+      });
+    });
+
+    // 2. Generate Invoice
+    const invoiceId = "INV-" + Date.now().toString().slice(-6);
+    generatedInvoices.unshift({
+      id: invoiceId,
+      retailer: destination, // Destination is effectively the retailer/branch here
+      date: new Date().toLocaleDateString(),
+      amount: totalDispatchValue, // Already in Euro
+      items: materials.map((m) => ({
+        name: m.name,
+        sellingQty: m.sellingQty,
+        amount: m.totalEUR, // Storing pure Euro value now
+      })),
+      status: "Paid",
+    });
+
+    // 3. UI Feedback
+    alert(
+      `Success! Dispatched to ${destination}.\n\nInvoice ${invoiceId} Generated.\nTotal Value: €${totalDispatchValue.toFixed(
+        2
+      )}`
+    );
+
+    // Reset Form
+    $("#distributorForm")[0].reset();
+    renderDistributorGrid(); // Re-render to show updated (reduced) stock
+    updateDistributorSelectionState();
+
+    // Force Render of new data
+    renderRetailAndInvoices();
+  });
+  // ========== WAREHOUSE ACCEPTANCE LOGIC (SAFE ADDITION) ==========
+  // shipments array moved to top of file
+  // ];
 
   // Global function to accept shipment
   window.acceptShipment = function (id) {
-    const shipment = shipments.find(s => s.id === id);
+    const shipment = shipments.find((s) => s.id === id);
     if (shipment) {
-      shipment.status = 'Received';
-      alert(`Success! Stock from Order ${shipment.id} has been added to ${shipment.warehouse} inventory.`);
+      shipment.status = "Received";
+      alert(
+        `Success! Stock from Order ${shipment.id} has been added to ${shipment.warehouse} inventory.`
+      );
 
       // Re-render to show updated status
-      const activeFilter = $('#warehouseTabs .nav-link.active').data('filter');
+      const activeFilter = $("#warehouseTabs .nav-link.active").data("filter");
       renderShipments(activeFilter);
     }
   };
 
-
-
   // Warehouse Address Mapping
   const warehouseAddresses = {
-    'Delhi': { name: 'Delhi Main Hub', address: 'Okhla Phase III, New Delhi, India' },
-    'Madrid': { name: 'Madrid Distribution Center', address: 'Calle de Alcalá, 45, Madrid, Spain' },
-    'Barcelona': { name: 'Barcelona Logistics Hub', address: 'Carrer de la Marina, 18, Barcelona, Spain' }
+    Delhi: {
+      name: "Delhi Main Hub",
+      address: "Okhla Phase III, New Delhi, India",
+    },
+    Madrid: {
+      name: "Madrid Distribution Center",
+      address: "Calle de Alcalá, 45, Madrid, Spain",
+    },
+    Barcelona: {
+      name: "Barcelona Logistics Hub",
+      address: "Carrer de la Marina, 18, Barcelona, Spain",
+    },
   };
 
   // Vendor Address Mapping (Mock for now, assuming current user is Vendor 1)
   const currentVendor = {
-    name: 'Vendor 1 (Women Wear)',
-    address: 'Fashion Street, Delhi, India'
+    name: "Vendor 1 (Women Wear)",
+    address: "Fashion Street, Delhi, India",
   };
 
   // Global function to view shipment details
   window.viewShipmentDetails = function (id) {
-    const shipment = shipments.find(s => s.id === id);
+    const shipment = shipments.find((s) => s.id === id);
     if (!shipment) return;
 
     // Populate Order Info
-    $('#modalOrderId').text(shipment.id);
-    $('#modalDate').text(shipment.dispatchDate || 'N/A');
+    $("#modalOrderId").text(shipment.id);
+    $("#modalDate").text(shipment.dispatchDate || "N/A");
 
     // Resolve Warehouse Details
-    const whInfo = warehouseAddresses[shipment.warehouse] || { name: shipment.warehouse, address: 'Main Warehouse' };
+    const whInfo = warehouseAddresses[shipment.warehouse] || {
+      name: shipment.warehouse,
+      address: "Main Warehouse",
+    };
 
     // Update "To" Section
-    $('#modalWarehouse').text(whInfo.name);
-    $('#modalWarehouseAddress').text(whInfo.address); // Need to add this ID to HTML
+    $("#modalWarehouse").text(whInfo.name);
+    $("#modalWarehouseAddress").text(whInfo.address); // Need to add this ID to HTML
 
     // Update "From" Section (Static for this POC or mock)
     // If shipments had vendorId we could map it, but for now we default to the current vendor context
@@ -679,24 +949,25 @@ $(document).ready(function () {
     // Let's assume the hardcoded shipments are from "Vendor 1" for consistency, or we add vendor property.
 
     // For now, I will update the HTML to have IDs for From section too.
-    $('#modalFromVendor').text(currentVendor.name);
-    $('#modalFromAddress').text(currentVendor.address);
+    $("#modalFromVendor").text(currentVendor.name);
+    $("#modalFromAddress").text(currentVendor.address);
 
-    $('#modalGrandTotal').text(shipment.grandTotal);
+    $("#modalGrandTotal").text(shipment.grandTotal);
 
     // Status Badge
-    let badge = shipment.status === 'Pending'
-      ? '<span class="badge bg-warning text-dark">Pending Acceptance</span>'
-      : '<span class="badge bg-success">Received</span>';
-    $('#modalStatusBadge').html(badge);
+    let badge =
+      shipment.status === "Pending"
+        ? '<span class="badge bg-warning text-dark">Pending Acceptance</span>'
+        : '<span class="badge bg-success">Received</span>';
+    $("#modalStatusBadge").html(badge);
 
     // Populate Items Table
-    const itemsBody = $('#modalItemsTable');
+    const itemsBody = $("#modalItemsTable");
     itemsBody.empty();
 
-    shipment.items.forEach(item => {
-      const priceDisplay = item.price ? `₹${item.price}` : '-';
-      const totalDisplay = item.total ? item.total : '-';
+    shipment.items.forEach((item) => {
+      const priceDisplay = item.price ? `₹${item.price}` : "-";
+      const totalDisplay = item.total ? item.total : "-";
 
       const row = `
               <tr>
@@ -710,18 +981,18 @@ $(document).ready(function () {
     });
 
     // Show Modal
-    const modal = new bootstrap.Modal(document.getElementById('shipmentDetailsModal'));
+    const modal = new bootstrap.Modal(
+      document.getElementById("shipmentDetailsModal")
+    );
     modal.show();
   };
 
-
-
-  function renderShipments(filter = 'All') {
-    const tableBody = $('#shipmentTableBody');
+  function renderShipments(filter = "All") {
+    const tableBody = $("#shipmentTableBody");
     tableBody.empty();
 
-    const filteredShipments = shipments.filter(s => {
-      if (filter === 'All') return true;
+    const filteredShipments = shipments.filter((s) => {
+      if (filter === "All") return true;
       return s.warehouse.includes(filter);
     });
 
@@ -737,17 +1008,19 @@ $(document).ready(function () {
       return;
     }
 
-    filteredShipments.forEach(s => {
-      const itemSummary = s.items.length > 1
-        ? `${s.items[0].name} + ${s.items.length - 1} more`
-        : s.items[0].name;
+    filteredShipments.forEach((s) => {
+      const itemSummary =
+        s.items.length > 1
+          ? `${s.items[0].name} + ${s.items.length - 1} more`
+          : s.items[0].name;
 
       // Status Badge Logic
-      let statusBadge = '';
-      let actionBtn = '';
+      let statusBadge = "";
+      let actionBtn = "";
 
-      if (s.status === 'Pending') {
-        statusBadge = '<span class="badge bg-warning text-dark">Pending Acceptance</span>';
+      if (s.status === "Pending") {
+        statusBadge =
+          '<span class="badge bg-warning text-dark">Pending Acceptance</span>';
         actionBtn = `
                    <button class="btn btn-sm btn-success me-1" onclick="acceptShipment('${s.id}')">
                        <i class="fas fa-check me-1"></i> Accept
@@ -771,12 +1044,14 @@ $(document).ready(function () {
       const row = `
                <tr>
                    <td><span class="badge bg-secondary">${s.id}</span></td>
-                   <td>${s.dispatchDate || 'N/A'}</td>
+                   <td>${s.dispatchDate || "N/A"}</td>
                    <td>${s.warehouse}</td>
                    <td>
                        <div class="d-flex flex-column">
                            <span class="fw-bold small">${itemSummary}</span>
-                           <span class="text-muted small">${s.items.length} items</span>
+                           <span class="text-muted small">${
+                             s.items.length
+                           } items</span>
                        </div>
                    </td>
                    <td class="fw-bold">${s.grandTotal}</td>
@@ -796,13 +1071,13 @@ $(document).ready(function () {
   renderShipments();
 
   // Warehouse Tab Click Handler (Specific to ID to avoid Main Tab Conflict)
-  $('#warehouseTabs .nav-link').click(function (e) {
+  $("#warehouseTabs .nav-link").click(function (e) {
     e.preventDefault();
     // Only affect tabs within this specific container
-    $('#warehouseTabs .nav-link').removeClass('active');
-    $(this).addClass('active');
+    $("#warehouseTabs .nav-link").removeClass("active");
+    $(this).addClass("active");
 
-    const filter = $(this).data('filter');
+    const filter = $(this).data("filter");
     renderShipments(filter);
   });
 });

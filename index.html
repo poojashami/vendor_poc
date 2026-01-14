@@ -42,17 +42,14 @@
             </div>
             <div class="nav-link" data-tab="material-distributor">
                 <i class="fas fa-dolly"></i>
-                <span>Retail Dispatch</span>
+                <span>Seller Orders</span>
             </div>
 
             <div class="nav-link" data-tab="orders">
                 <i class="fas fa-store"></i>
                 <span>Spain Retail Levels</span>
             </div>
-            <div class="nav-link" data-tab="reports">
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>Invoices & Reports</span>
-            </div>
+
         </nav>
     </div>
 
@@ -390,10 +387,10 @@
                     <div class="d-flex justify-content-between align-items-center border-bottom">
                         <div>
                             <h5 class="fw-bold mb-1">
-                                <i class="fas fa-dolly me-2 text-primary"></i>Retail Dispatch
+                                <i class="fas fa-dolly me-2 text-primary"></i>Seller Orders
                             </h5>
                             <p class="text-muted small mb-0">
-                                Manage outbound stock to retail partners
+                                Dispatch products to European destinations
                             </p>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -405,25 +402,26 @@
 
                     <form id="distributorForm">
                         <!-- Dispatch Header Info -->
-                        <div class="bg-light rounded-4 mb-4 border-dashed">
+                        <div class="bg-light rounded-4 mb-4 border-dashed p-3">
                             <div class="row g-4 align-items-center">
-                                <div class="col-md-5">
-                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1">Select Retail
-                                        Partner</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white border-end-0"><i
-                                                class="fas fa-store text-primary"></i></span>
-                                        <select class="form-select border-start-0 ps-0 fw-bold" id="distributorName"
-                                            required style="height: 48px">
-                                            <option value="" selected disabled>
-                                                Select Distributor
-                                            </option>
-                                            <option value="Seller 1">Seller 1 (Premium)</option>
-                                            <option value="Seller 2">Seller 2 (Malls)</option>
-                                            <option value="Seller 3">Seller 3 (High Street)</option>
-                                            <option value="Seller 4">Seller 4 (Online)</option>
-                                            <option value="Seller 5">Seller 5 (Boutique)</option>
-                                        </select>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1 mb-3">Select
+                                        Destination Hub (Spain)</label>
+                                    <div class="d-flex gap-4">
+                                        <div class="form-check form-check-custom">
+                                            <input class="form-check-input" type="radio" name="destinationHub"
+                                                id="destMadrid" value="Madrid" required checked>
+                                            <label class="form-check-label fw-bold" for="destMadrid">
+                                                <i class="fas fa-map-marker-alt text-danger me-2"></i>Madrid
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-check-custom">
+                                            <input class="form-check-input" type="radio" name="destinationHub"
+                                                id="destBarcelona" value="Barcelona">
+                                            <label class="form-check-label fw-bold" for="destBarcelona">
+                                                <i class="fas fa-map-marker-alt text-info me-2"></i>Barcelona
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -432,7 +430,7 @@
                                     <input type="date" class="form-control fw-bold" value="2026-01-14"
                                         style="height: 48px" />
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label small text-uppercase text-muted fw-bold ls-1">Reference
                                         ID</label>
                                     <input type="text" class="form-control font-monospace text-muted"
@@ -441,115 +439,31 @@
                             </div>
                         </div>
 
-                        <!-- Materials Dispatch Manifest -->
-                        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
-                            <div class="card-header bg-dark text-white py-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0 fw-bold">
-                                        <i class="fas fa-clipboard-list me-2"></i>Dispatch
-                                        Manifest
-                                    </h6>
-                                    <small class="opacity-75">Items to be shipped</small>
+                        <!-- Product Selection Grid (Visual) -->
+                        <div class="row g-4 mb-4" id="distributor-product-grid">
+                            <!-- Grid items will be injected by script.js -->
+                        </div>
+
+                        <!-- Total Amount Display -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="bg-gradient rounded-3"
+                                    style="background: linear-gradient(135deg, #FF8008 0%, #FFC837 100%);">
+                                    <div class="d-flex align-items-center p-3 text-white">
+                                        <span class="h5 mb-0 fw-bold me-2">Total Dispatch Value:</span>
+                                        <span class="h4 mb-0 fw-bold" id="distGrandTotal">€0.00</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="bg-light">
-                                        <tr class="text-secondary small text-uppercase">
-                                            <th class="ps-4 py-3" width="5%">#</th>
-                                            <th class="py-3" width="35%">Material Description</th>
-                                            <th class="py-3" width="15%">Available Stock</th>
-                                            <th class="py-3" width="15%">Dispatch Qty</th>
-                                            <th class="py-3" width="20%">Value (₹)</th>
-                                            <th class="py-3 text-center" width="10%">Remove</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="distributorMaterialRows">
-                                        <tr class="dist-material-row">
-                                            <td class="text-center dist-material-number ps-4 text-muted fw-bold">
-                                                1
-                                            </td>
-                                            <td>
-                                                <select
-                                                    class="form-select dist-material-name border-0 fw-bold text-dark"
-                                                    required>
-                                                    <option value="" selected disabled>
-                                                        Select Material
-                                                    </option>
-                                                    <!-- Dynamic Options Injected By JS -->
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number"
-                                                        class="form-control bg-light dist-current-qty text-center"
-                                                        readonly value="0" />
-                                                    <span
-                                                        class="input-group-text bg-light border-start-0 text-muted">pcs</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <input type="number"
-                                                    class="form-control dist-selling-qty fw-bold text-primary" min="1"
-                                                    value="0" required />
-                                            </td>
-                                            <td>
-                                                <input type="text"
-                                                    class="form-control bg-transparent border-0 fw-bold dist-amount"
-                                                    readonly value="₹0.00" />
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button"
-                                                    class="btn btn-sm btn-light text-danger remove-dist-material-row rounded-circle hover-scale">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="card-footer bg-white p-3 border-top">
-                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-bold"
-                                    id="addDistMaterialRowBtn">
-                                    <i class="fas fa-plus-circle me-1"></i> Add Another Item
-                                </button>
                             </div>
                         </div>
 
-                        <div class="row items-align-center">
-                            <!-- Remarks -->
-                            <div class="col-md-7">
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold text-muted small text-uppercase">Logistics
-                                        Notes</label>
-                                    <textarea class="form-control" id="distRemarks" rows="2"
-                                        placeholder="Driver details, Gate pass number, or special handling instructions..."></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Total Summary -->
-                            <div class="col-md-5">
-                                <div class="">
-                                    <div class="position-relative z-1 text-end">
-                                        <p class="mb-1 opacity-75 small text-uppercase ls-1">
-                                            Total Dispatch Value
-                                        </p>
-                                        <h2 class=" fw-bold mb-3" id="distGrandTotal">
-                                            ₹0.00
-                                        </h2>
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <button type="button" class="btn btn-secondary" id="cancelDistBtn">
-                                                <i class="fas fa-times me-2"></i>Cancel
-                                            </button>
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-paper-plane me-2"></i>Confirm Dispatch
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <!-- Decorative Circle -->
-                                    <div></div>
-                                </div>
-                            </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" id="cancelDistBtn">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Process Seller Order
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -558,57 +472,141 @@
             <!-- Orders/Retail Tab -->
             <div class="tab-content" id="orders" style="display: none">
                 <div class="glass-card">
-                    <h5 class="fw-bold mb-4">Retail Point Distribution</h5>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
+                    <h5 class="fw-bold mb-4">
+                        <i class="fas fa-globe-europe me-2 text-primary"></i>Spain Retail Levels & Invoices
+                    </h5>
+
+                    <!-- Retail Stock Overview -->
+                    <div class="mb-5">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3 ls-1">Retail Stock Distribution</h6>
+                        <div class="table-responsive bg-white rounded-3 shadow-sm border">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="text-secondary small text-uppercase">
+                                        <th class="ps-4">Retail Partner</th>
+                                        <th>Last Update</th>
+                                        <th>Stock Depth</th>
+                                        <th class="text-center">Total Qty (pcs)</th>
+                                        <th class="text-end pe-4">Est. Value (EUR)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="retailLevelTableBody">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Invoices Section -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-0 ls-1">Generated Invoices</h6>
+                            <button class="btn btn-sm btn-light border" onclick="renderRetailAndInvoices()"><i
+                                    class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <div class="table-responsive bg-white rounded-3 shadow-sm border">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="text-secondary small text-uppercase">
+                                        <th class="ps-4">Invoice #</th>
+                                        <th>Retailer</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoiceTableBody">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- FULL PAGE INVOICE VIEW -->
+            <div class="tab-content" id="invoice-view" style="display: none">
+                <div class="glass-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1 text-primary">
+                                <i class="fas fa-file-invoice me-2"></i>Official Tax Invoice
+                            </h5>
+                            <button class="btn btn-sm btn-link text-muted p-0 text-decoration-none"
+                                onclick="$('#invoice-view').hide(); $('#orders').show();">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Reports
+                            </button>
+                        </div>
+                        <div class="text-end">
+                            <span
+                                class="badge bg-success-subtle text-success border border-success px-3 py-2 rounded-pill">
+                                <i class="fas fa-check-circle me-1"></i> PAID
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-5">
+                        <div class="col-md-6">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Billed To:</h6>
+                            <h4 class="fw-bold mb-1" id="pageInvoiceTo">Retailer Name</h4>
+                            <p class="text-muted mb-0">Spain Hub Partner</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Invoice Details:</h6>
+                            <p class="mb-1">Invoice ID: <span class="fw-bold font-monospace text-dark"
+                                    id="pageInvoiceId">#INV-000000</span></p>
+                            <p class="mb-0">Date: <span class="fw-bold" id="pageInvoiceDate">Jan 14, 2026</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Items Table -->
+                    <div class="table-responsive bg-white border rounded-3 mb-4">
+                        <table class="table table-striped mb-0">
+                            <thead class="bg-dark text-white">
                                 <tr>
-                                    <th>Retail Point</th>
-                                    <th>Item 1</th>
-                                    <th>Item 2</th>
-                                    <th>Item 3</th>
-                                    <th>Total Sales</th>
+                                    <th class="py-3 ps-4">Item Description</th>
+                                    <th class="py-3 text-center">Quantity</th>
+                                    <th class="py-3 text-end">Unit Price (EUR)</th>
+                                    <th class="py-3 text-end pe-4">Total (EUR)</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Retailer 1</td>
-                                    <td>20</td>
-                                    <td>15</td>
-                                    <td>5</td>
-                                    <td><span class="fw-bold">40</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Retailer 2</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                </tr>
-                                <tr>
-                                    <td>Retailer 3</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                </tr>
+                            <tbody id="pageInvoiceItems">
+                                <!-- Dynamic Items -->
                             </tbody>
+                            <tfoot class="bg-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold py-3">Subtotal:</td>
+                                    <td class="text-end py-3 pe-4 fw-bold" id="pageInvoiceSubtotal">€0.00</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold py-3 text-muted">Tax (15%):</td>
+                                    <td class="text-end py-3 pe-4 fw-bold text-muted" id="pageInvoiceTax">€0.00</td>
+                                </tr>
+                                <tr class="border-top border-2 border-primary">
+                                    <td colspan="3" class="text-end fw-bold py-4 fs-5">Grand Total:</td>
+                                    <td class="text-end py-4 pe-4 fw-bold fs-4 text-primary" id="pageInvoiceTotal">€0.00
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
-                    <div class="mt-4 p-3 bg-dark text-white rounded-3">
-                        <h6>Invoice Summary (EUR)</h6>
-                        <div class="d-flex gap-4 small opacity-75">
-                            <span>W/T: 15%</span>
-                            <span>Wilk/T: 0</span>
-                            <span>Status: Invoiced in Euro</span>
-                        </div>
+
+                    <!-- Footer Actions -->
+                    <div class="d-flex justify-content-end gap-3 no-print">
+                        <button class="btn btn-outline-secondary" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i> Print Intent
+                        </button>
+                        <button class="btn btn-primary" onclick="$('#invoice-view').hide(); $('#orders').show();">
+                            <i class="fas fa-check me-2"></i> Done
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Invoice Modal -->
+    <!-- Invoice Modal (REMOVED/UNUSED now) -->
     <div class="modal fade" id="invoiceModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content glass-card border-0">
@@ -748,6 +746,76 @@
             </div>
         </div>
     </div>
-</body>
+    </div>
+    </div>
+
+    <!-- Invoice Modal (Restored) -->
+    <div class="modal fade" id="invoiceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-card border-0 p-0">
+                <div class="modal-header border-bottom-0 p-4 pb-0">
+                    <h5 class="modal-title fw-bold text-primary">
+                        <i class="fas fa-file-invoice me-2"></i>Official Tax Invoice
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold mb-1">Billed To:</h6>
+                            <h5 class="fw-bold mb-0" id="modalInvoiceTo">Retailer Name</h5>
+                        </div>
+                        <div class="text-end">
+                            <span
+                                class="badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill mb-2">
+                                <i class="fas fa-check-circle me-1"></i> PAID
+                            </span>
+                            <div class="small text-muted">Invoice ID: <span class="fw-bold text-dark font-monospace"
+                                    id="modalInvoiceId">#INV-000</span></div>
+                            <div class="small text-muted">Date: <span class="fw-bold text-dark"
+                                    id="modalInvoiceDate">Jan 14, 2026</span></div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive bg-light rounded-3 border mb-3">
+                        <table class="table table-borderless mb-0">
+                            <thead class="border-bottom">
+                                <tr class="text-muted small text-uppercase">
+                                    <th class="ps-3 py-2">Item</th>
+                                    <th class="text-center py-2">Qty</th>
+                                    <th class="text-end py-2">Price</th>
+                                    <th class="text-end pe-3 py-2">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalInvoiceItemsBody">
+                                <!-- Dynamic Items -->
+                            </tbody>
+                            <tfoot class="border-top">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold pt-3">Subtotal:</td>
+                                    <td class="text-end fw-bold pt-3 pe-3" id="modalInvoiceSubtotal">€0.00</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold text-muted">Tax (15%):</td>
+                                    <td class="text-end fw-bold text-muted pe-3" id="modalInvoiceTax">€0.00</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold text-primary fs-5 pb-3">Grand Total:</td>
+                                    <td class="text-end fw-bold text-primary fs-5 pb-3 pe-3" id="modalInvoiceTotal">
+                                        €0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 p-4 pt-0">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i> Print
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </html>
