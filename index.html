@@ -510,13 +510,30 @@
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <h5 class="fw-bold mb-1">
-                                <i class="fas fa-truck-loading me-2 text-primary"></i>Fleet Management & Dispatch
+                                <i class="fas fa-truck-loading me-2 text-primary"></i>Dispatch Material
                             </h5>
-                            <p class="text-muted small mb-0">Manage vehicle logistics and track shipments</p>
+                            <p class="text-muted small mb-0">Review pending orders and confirm final dispatch</p>
                         </div>
-                        <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
-                            <i class="fas fa-clock me-1"></i> Pending Dispatch: <span id="pendingDispatchCount">0</span>
-                        </span>
+                        <div class="d-flex align-items-center gap-3">
+                            <ul class="nav nav-pills" id="dispatchFilters">
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="javascript:void(0)"
+                                        data-dispatch-filter="All">All</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="javascript:void(0)"
+                                        data-dispatch-filter="Madrid">Madrid</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="javascript:void(0)"
+                                        data-dispatch-filter="Barcelona">Barcelona</a>
+                                </li>
+                            </ul>
+                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                                <i class="fas fa-clock me-1"></i> Pending Dispatch: <span
+                                    id="pendingDispatchCount">0</span>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Centered All Clear Message (NEW) -->
@@ -532,79 +549,26 @@
                         </button>
                     </div>
 
-                    <div class="row g-4" id="dispatchMainRow">
-                        <!-- Pending Orders List -->
-                        <div class="col-lg-4">
-                            <h6 class="text-uppercase text-muted small fw-bold mb-3 ls-1">Ready for Dispatch</h6>
-                            <div class="list-group shadow-sm border rounded-4 overflow-hidden" id="pendingDispatchList">
-                                <!-- Dynamic Items -->
-                                <div class="list-group-item text-center py-5 text-muted">
-                                    <i class="fas fa-box-open fs-2 mb-2 opacity-25"></i>
-                                    <p class="mb-0">No orders pending dispatch</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Logistics Form -->
-                        <div class="col-lg-8" id="dispatchViewCol">
-                            <div class="bg-light rounded-4 p-4 border" id="dispatchFormContainer"
-                                style="display: none; min-height: 400px;">
-                                <h6 class="fw-bold mb-4 d-flex align-items-center">
-                                    <i class="fas fa-info-circle me-2 text-primary"></i>
-                                    <span>Assign Logistics for Order: <span id="activeDispatchOrderId"
-                                            class="text-primary font-monospace">#ORD-000</span></span>
-                                </h6>
-
-                                <form id="logisticsEntryForm">
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-6">
-                                            <label
-                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Transporter
-                                                Name</label>
-                                            <input type="text" class="form-control" id="logTransporter"
-                                                placeholder="e.g. DHL, BlueDart" style="height: 48px" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label
-                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Vehicle
-                                                Number</label>
-                                            <input type="text" class="form-control font-monospace" id="logVehicleNo"
-                                                placeholder="ES 1234 XY" style="height: 48px" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label
-                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Driver
-                                                Name</label>
-                                            <input type="text" class="form-control" id="logDriverName"
-                                                placeholder="Driver Full Name" style="height: 48px" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label
-                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Driver
-                                                Contact</label>
-                                            <input type="text" class="form-control" id="logDriverContact"
-                                                placeholder="+34 XXX XXX XXX" style="height: 48px" required>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label
-                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Specific
-                                                Instructions</label>
-                                            <textarea class="form-control" id="logRemarks" rows="3"
-                                                placeholder="Route details or delivery preference..."></textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                                        <button type="button" class="btn btn-outline-secondary px-3 btn-sm"
-                                            onclick="$('#dispatchFormContainer').fadeOut();">Cancel</button>
-                                        <button type="submit" class="btn btn-primary px-4 btn-sm">Confirm &
-                                            Dispatch</button>
-                                    </div>
-                                </form>
-                            </div>
+                    <div id="dispatchMainRow">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light text-uppercase">
+                                    <tr class="small fw-bold border-bottom">
+                                        <th class="ps-3">Order ID</th>
+                                        <th>Date</th>
+                                        <th>Seller</th>
+                                        <th>Destination</th>
+                                        <th>Items</th>
+                                        <th>Total Amount</th>
+                                        <th class="text-end pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dispatchTableBody">
+                                    <!-- Dynamic rows injected by script.js -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
                 </div> <!-- Close primary glass-card -->
 
                 <!-- Dispatched History Section (Now in its own glass-card) -->
@@ -625,10 +589,9 @@
                                 <tr class="small fw-bold border-bottom">
                                     <th class="ps-4 py-3">Dispatch ID</th>
                                     <th>Order ID</th>
-                                    <th>Transporter</th>
-                                    <th>Vehicle No</th>
-                                    <th>Driver</th>
+                                    <th>Seller</th>
                                     <th>Destination</th>
+                                    <th>Date</th>
                                     <th class="text-end pe-4">Status</th>
                                 </tr>
                             </thead>

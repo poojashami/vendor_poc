@@ -241,8 +241,9 @@ body {
 }
 
 
-/* Strict Styling for Warehouse Sub-Tabs */
-#warehouseTabs .nav-link {
+/* Shared Styling for Warehouse and Dispatch Sub-Tabs */
+#warehouseTabs .nav-link,
+#dispatchFilters .nav-link {
   color: #000000 !important;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -250,12 +251,14 @@ body {
   padding: 0.5rem 1rem;
 }
 
-#warehouseTabs .nav-link:hover {
+#warehouseTabs .nav-link:hover,
+#dispatchFilters .nav-link:hover {
   color: #0d6efd !important;
   background-color: rgba(13, 110, 253, 0.1);
 }
 
-#warehouseTabs .nav-link.active {
+#warehouseTabs .nav-link.active,
+#dispatchFilters .nav-link.active {
   background: #0d6efd !important;
   /* Blue background */
   color: white !important;

@@ -791,9 +791,10 @@ $(document).ready(function () {
       amount: totalDispatchValue,
       items: materials,
       date: new Date().toLocaleDateString(),
-      seller: sellerName,
+      retailer: sellerName,
     });
-    renderPendingDispatchList();
+    const activeDispatchFilter = $("#dispatchFilters .nav-link.active").data("dispatch-filter") || "All";
+    renderPendingDispatchList(activeDispatchFilter);
 
     // 4. UI Feedback
     alert(
@@ -1006,11 +1007,14 @@ $(document).ready(function () {
 
   // ========== Dispatch Material LOGIC ==========
 
-  function renderPendingDispatchList() {
-    const container = $("#pendingDispatchList");
+  function renderPendingDispatchList(filter = "All") {
+    const tableBody = $("#dispatchTableBody");
     const countBadge = $("#pendingDispatchCount");
-    container.empty();
+    tableBody.empty();
+
+    // Always show total pending count in the badge
     countBadge.text(pendingDispatchOrders.length);
+
     const mainRow = $("#dispatchMainRow");
     const allClear = $("#dispatchAllClear");
 
@@ -1023,70 +1027,94 @@ $(document).ready(function () {
       allClear.hide();
     }
 
-    pendingDispatchOrders.forEach((order) => {
-      container.append(`
-        <a href="javascript:void(0)" class="list-group-item list-group-item-action p-3" onclick="selectOrderForDispatch('${order.id
-        }')">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="font-monospace fw-bold text-primary">${order.id}</span>
-            <span class="badge bg-warning-subtle text-warning border border-warning small">Pending</span>
-          </div>
-          <div class="small fw-bold">${order.destination} Hub</div>
-          <div class="d-flex justify-content-between mt-2">
-            <span class="text-muted smaller">${order.items.length} items</span>
-            <span class="fw-bold text-dark">€${order.amount.toFixed(2)}</span>
-          </div>
-        </a>
+    const filteredOrders = pendingDispatchOrders.filter(order => {
+      if (filter === "All") return true;
+      return order.destination === filter;
+    });
+
+    if (filteredOrders.length === 0) {
+      tableBody.append(`
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">
+            <i class="fas fa-search mb-2 fs-3 opacity-25"></i>
+            <p class="mb-0">No orders found for ${filter}</p>
+          </td>
+        </tr>
+      `);
+      return;
+    }
+
+    filteredOrders.forEach((order) => {
+      const itemSummary = order.items.length > 1
+        ? `${order.items[0].name || 'Product'} + ${order.items.length - 1} more`
+        : (order.items[0].name || 'Product');
+
+      tableBody.append(`
+        <tr>
+          <td class="ps-3"><span class="badge bg-secondary-subtle text-secondary font-monospace border">${order.id}</span></td>
+          <td class="small">${order.date || 'Jan 15, 2026'}</td>
+          <td class="small fw-bold">${order.retailer || 'General Seller'}</td>
+          <td class="small"><i class="fas fa-map-marker-alt me-1 text-danger opacity-75"></i> ${order.destination}</td>
+          <td class="small text-muted">${itemSummary}</td>
+          <td class="fw-bold text-dark">€${order.amount.toFixed(2)}</td>
+          <td class="text-end pe-3">
+            <button class="btn btn-sm btn-primary px-3 rounded-pill" onclick="finalizeDispatch(this, '${order.id}')">
+              <i class="fas fa-paper-plane me-1"></i> Dispatch
+            </button>
+          </td>
+        </tr>
       `);
     });
   }
 
-  window.selectOrderForDispatch = function (id) {
-    const order = pendingDispatchOrders.find((o) => o.id === id);
-    if (!order) return;
-
-    $("#activeDispatchOrderId").text(id);
-    $("#dispatchFormContainer").fadeIn();
-
-    // Reset inputs
-    $("#logisticsEntryForm")[0].reset();
-  };
-
-  $("#logisticsEntryForm").submit(function (e) {
-    e.preventDefault();
-    const orderId = $("#activeDispatchOrderId").text();
+  window.finalizeDispatch = function (btn, orderId) {
     const orderIdx = pendingDispatchOrders.findIndex((o) => o.id === orderId);
-
     if (orderIdx === -1) return;
 
-    const transporter = $("#logTransporter").val();
-    const vehicle = $("#logVehicleNo").val();
-    const driver = $("#logDriverName").val();
+    // Immediately disable button and show loading state
+    $(btn).prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Processing...');
 
-    // Move to History (NEW)
+
+    const order = pendingDispatchOrders[orderIdx];
     const dispatchId = "DSP-" + Math.floor(1000 + Math.random() * 9000);
+
+    // Move to History
     dispatchedHistory.unshift({
       id: dispatchId,
       orderId: orderId,
-      transporter: transporter,
-      vehicle: vehicle,
-      driver: driver,
-      destination: pendingDispatchOrders[orderIdx].destination,
-      status: "In-Transit",
+      retailer: order.retailer || 'General Seller',
+      destination: order.destination,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      status: "Dispatched",
     });
+
     renderDispatchedHistory();
 
-    // Final alert
-    alert(
-      `Order ${orderId} has been successfully dispatched via ${transporter} (${vehicle})!\n\nDispatch ID: ${dispatchId}`
-    );
+    // Success notification
+    Swal.fire({
+      icon: 'success',
+      title: 'Order Dispatched',
+      text: `Order ${orderId} has been successfully dispatched!\nDispatch ID: ${dispatchId}`,
+      timer: 2000,
+      showConfirmButton: false
+    });
 
     // Remove from pending
     pendingDispatchOrders.splice(orderIdx, 1);
-    renderPendingDispatchList();
 
-    // Hide form
-    $("#dispatchFormContainer").hide();
+    // Refresh with current filter
+    const activeFilter = $("#dispatchFilters .nav-link.active").data("dispatch-filter");
+    renderPendingDispatchList(activeFilter);
+  };
+
+  // Dispatch Filter Tab Click Handler
+  $("#dispatchFilters .nav-link").click(function (e) {
+    e.preventDefault();
+    $("#dispatchFilters .nav-link").removeClass("active");
+    $(this).addClass("active");
+
+    const filter = $(this).data("dispatch-filter");
+    renderPendingDispatchList(filter);
   });
 
   window.renderDispatchedHistory = function () {
@@ -1109,10 +1137,9 @@ $(document).ready(function () {
         <tr>
           <td class="ps-4 fw-bold font-monospace text-primary">${record.id}</td>
           <td class="small fw-bold">${record.orderId}</td>
-          <td>${record.transporter}</td>
-          <td class="font-monospace smaller">${record.vehicle}</td>
-          <td>${record.driver}</td>
-          <td><span class="badge bg-light text-dark">${record.destination}</span></td>
+          <td class="small">${record.retailer}</td>
+          <td><span class="badge bg-light text-dark border">${record.destination}</span></td>
+          <td class="small">${record.date}</td>
           <td class="text-end pe-4">
             <span class="badge bg-primary rounded-pill px-3 py-2 small fw-medium">
               <i class="fas fa-truck me-1"></i> ${record.status}
@@ -1128,8 +1155,9 @@ $(document).ready(function () {
     id: "ORD-8821",
     destination: "Madrid",
     amount: 1450.0,
-    items: [{}, {}],
+    items: [{ name: "Cotton Kurti" }, { name: "Silk Sari" }],
     date: "2026-01-14",
+    retailer: "Seller 1"
   });
   renderPendingDispatchList();
 });
