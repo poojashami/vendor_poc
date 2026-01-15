@@ -30,7 +30,7 @@
             </div>
             <div class="nav-link" data-tab="vendors">
                 <i class="fas fa-building"></i>
-                <span>Vendor Module</span>
+                <span>Vendor Master</span>
             </div>
             <div class="nav-link" data-tab="vendor-material">
                 <i class="fas fa-box-open"></i>
@@ -45,10 +45,11 @@
                 <span>Seller Orders</span>
             </div>
 
-            <div class="nav-link" data-tab="orders">
-                <i class="fas fa-store"></i>
-                <span>Spain Retail Levels</span>
+            <div class="nav-link" data-tab="fleet-dispatch">
+                <i class="fas fa-truck-loading"></i>
+                <span> Dispatch Material</span>
             </div>
+
 
         </nav>
     </div>
@@ -394,47 +395,55 @@
                             </p>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-purple-light text-purple fw-medium px-3 py-2 rounded-pill">
-                                <i class="fas fa-warehouse me-1"></i> Source: Delhi Hub
-                            </span>
+                            <!-- Source Badge Removed as requested -->
                         </div>
                     </div>
 
                     <form id="distributorForm">
                         <!-- Dispatch Header Info -->
                         <div class="bg-light rounded-4 mb-4 border-dashed p-3">
-                            <div class="row g-4 align-items-center">
-                                <div class="col-md-6">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
                                     <label class="form-label small text-uppercase text-muted fw-bold ls-1 mb-3">Select
-                                        Destination Hub (Spain)</label>
-                                    <div class="d-flex gap-4">
+                                        Hub / Retail Destination</label>
+                                    <div class="d-flex gap-3">
                                         <div class="form-check form-check-custom">
                                             <input class="form-check-input" type="radio" name="destinationHub"
                                                 id="destMadrid" value="Madrid" required checked>
-                                            <label class="form-check-label fw-bold" for="destMadrid">
-                                                <i class="fas fa-map-marker-alt text-danger me-2"></i>Madrid
+                                            <label class="form-check-label fw-bold small" for="destMadrid">
+                                                <i class="fas fa-warehouse text-danger me-1"></i>Madrid
                                             </label>
                                         </div>
                                         <div class="form-check form-check-custom">
                                             <input class="form-check-input" type="radio" name="destinationHub"
                                                 id="destBarcelona" value="Barcelona">
-                                            <label class="form-check-label fw-bold" for="destBarcelona">
-                                                <i class="fas fa-map-marker-alt text-info me-2"></i>Barcelona
+                                            <label class="form-check-label fw-bold small" for="destBarcelona">
+                                                <i class="fas fa-warehouse text-info me-1"></i>Barcelona
                                             </label>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1">Dispatch
-                                        Date</label>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1">Select
+                                        Seller</label>
+                                    <select class="form-select fw-bold" id="distSeller" style="height: 48px">
+                                        <option value="" selected disabled>Choose Seller...</option>
+                                        <option value="Premium Boutique - Madrid">Premium Boutique - Madrid</option>
+                                        <option value="Royal Fabrics - Barcelona">Royal Fabrics - Barcelona</option>
+                                        <option value="Urban Style Store">Urban Style Store</option>
+                                        <option value="Elite Fashion Hub">Elite Fashion Hub</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1">Date</label>
                                     <input type="date" class="form-control fw-bold" value="2026-01-14"
                                         style="height: 48px" />
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1">Reference
+                                <div class="col-md-2">
+                                    <label class="form-label small text-uppercase text-muted fw-bold ls-1">Ref
                                         ID</label>
-                                    <input type="text" class="form-control font-monospace text-muted"
-                                        value="DISP-AUTO-001" readonly style="background: #e9ecef; height: 48px" />
+                                    <input type="text" class="form-control font-monospace text-muted small"
+                                        value="DSP-001" readonly style="background: #e9ecef; height: 48px" />
                                 </div>
                             </div>
                         </div>
@@ -444,18 +453,44 @@
                             <!-- Grid items will be injected by script.js -->
                         </div>
 
-                        <!-- Total Amount Display -->
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <div class="bg-gradient rounded-3"
-                                    style="background: linear-gradient(135deg, #FF8008 0%, #FFC837 100%);">
-                                    <div class="d-flex align-items-center p-3 text-white">
-                                        <span class="h5 mb-0 fw-bold me-2">Total Dispatch Value:</span>
-                                        <span class="h4 mb-0 fw-bold" id="distGrandTotal">€0.00</span>
-                                    </div>
+                        <!-- Financial Summary Section -->
+                        <div class="row g-3 mb-4 bg-light p-3 rounded-4 border mx-0">
+                            <div class="col-md-3">
+                                <label class="form-label small text-uppercase text-muted fw-bold ls-1">Total
+                                    Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 text-muted">€</span>
+                                    <input type="text" class="form-control fw-bold border-start-0 bg-white"
+                                        id="distTotalAmount" value="0.00" readonly>
                                 </div>
                             </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-uppercase text-muted fw-bold ls-1">Amount
+                                    Received</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 text-muted">€</span>
+                                    <input type="number" class="form-control fw-bold border-start-0"
+                                        id="distAmountReceived" value="0" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-uppercase text-muted fw-bold ls-1 text-danger">Amt
+                                    Pending</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 text-danger opacity-75">€</span>
+                                    <input type="text" class="form-control fw-bold border-start-0 bg-white text-danger"
+                                        id="distAmtPending" value="0.00" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-uppercase text-muted fw-bold ls-1">Order Booking
+                                    Date</label>
+                                <input type="date" class="form-control fw-bold" id="distBookingDate">
+                            </div>
                         </div>
+
+                        <!-- Keep distGrandTotal for script compatibility but hide it or remove if fully switched -->
+                        <span id="distGrandTotal" style="display: none;">€0.00</span>
 
                         <div class="d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-secondary" id="cancelDistBtn">
@@ -469,141 +504,146 @@
                 </div>
             </div>
 
-            <!-- Orders/Retail Tab -->
-            <div class="tab-content" id="orders" style="display: none">
+            <!--  Dispatch Tab (NEW) -->
+            <div class="tab-content" id="fleet-dispatch" style="display: none">
                 <div class="glass-card">
-                    <h5 class="fw-bold mb-4">
-                        <i class="fas fa-globe-europe me-2 text-primary"></i>Spain Retail Levels & Invoices
-                    </h5>
-
-                    <!-- Retail Stock Overview -->
-                    <div class="mb-5">
-                        <h6 class="text-uppercase text-muted small fw-bold mb-3 ls-1">Retail Stock Distribution</h6>
-                        <div class="table-responsive bg-white rounded-3 shadow-sm border">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr class="text-secondary small text-uppercase">
-                                        <th class="ps-4">Retail Partner</th>
-                                        <th>Last Update</th>
-                                        <th>Stock Depth</th>
-                                        <th class="text-center">Total Qty (pcs)</th>
-                                        <th class="text-end pe-4">Est. Value (EUR)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="retailLevelTableBody">
-                                    <!-- Dynamic Rows -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Invoices Section -->
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="text-uppercase text-muted small fw-bold mb-0 ls-1">Generated Invoices</h6>
-                            <button class="btn btn-sm btn-light border" onclick="renderRetailAndInvoices()"><i
-                                    class="fas fa-sync-alt"></i> Refresh</button>
-                        </div>
-                        <div class="table-responsive bg-white rounded-3 shadow-sm border">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr class="text-secondary small text-uppercase">
-                                        <th class="ps-4">Invoice #</th>
-                                        <th>Retailer</th>
-                                        <th>Date</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="invoiceTableBody">
-                                    <!-- Dynamic Rows -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- FULL PAGE INVOICE VIEW -->
-            <div class="tab-content" id="invoice-view" style="display: none">
-                <div class="glass-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h5 class="fw-bold mb-1 text-primary">
-                                <i class="fas fa-file-invoice me-2"></i>Official Tax Invoice
+                            <h5 class="fw-bold mb-1">
+                                <i class="fas fa-truck-loading me-2 text-primary"></i>Fleet Management & Dispatch
                             </h5>
-                            <button class="btn btn-sm btn-link text-muted p-0 text-decoration-none"
-                                onclick="$('#invoice-view').hide(); $('#orders').show();">
-                                <i class="fas fa-arrow-left me-1"></i> Back to Reports
-                            </button>
+                            <p class="text-muted small mb-0">Manage vehicle logistics and track shipments</p>
                         </div>
-                        <div class="text-end">
-                            <span
-                                class="badge bg-success-subtle text-success border border-success px-3 py-2 rounded-pill">
-                                <i class="fas fa-check-circle me-1"></i> PAID
-                            </span>
+                        <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                            <i class="fas fa-clock me-1"></i> Pending Dispatch: <span id="pendingDispatchCount">0</span>
+                        </span>
+                    </div>
+
+                    <!-- Centered All Clear Message (NEW) -->
+                    <div id="dispatchAllClear" class="text-center py-5 bg-white rounded-4 border border-dashed"
+                        style="display: none;">
+                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/success-concept-2130351-1800912.png"
+                            height="150" class="mb-3 opacity-75">
+                        <h5 class="fw-bold">All caught up!</h5>
+                        <p class="text-muted small">No orders are currently waiting for logistics assignment.</p>
+                        <button class="btn btn-primary btn-sm px-4 rounded-pill mt-2"
+                            onclick="showTab('material-distributor')">
+                            Go to Seller Orders <i class="fas fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+
+                    <div class="row g-4" id="dispatchMainRow">
+                        <!-- Pending Orders List -->
+                        <div class="col-lg-4">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-3 ls-1">Ready for Dispatch</h6>
+                            <div class="list-group shadow-sm border rounded-4 overflow-hidden" id="pendingDispatchList">
+                                <!-- Dynamic Items -->
+                                <div class="list-group-item text-center py-5 text-muted">
+                                    <i class="fas fa-box-open fs-2 mb-2 opacity-25"></i>
+                                    <p class="mb-0">No orders pending dispatch</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logistics Form -->
+                        <div class="col-lg-8" id="dispatchViewCol">
+                            <div class="bg-light rounded-4 p-4 border" id="dispatchFormContainer"
+                                style="display: none; min-height: 400px;">
+                                <h6 class="fw-bold mb-4 d-flex align-items-center">
+                                    <i class="fas fa-info-circle me-2 text-primary"></i>
+                                    <span>Assign Logistics for Order: <span id="activeDispatchOrderId"
+                                            class="text-primary font-monospace">#ORD-000</span></span>
+                                </h6>
+
+                                <form id="logisticsEntryForm">
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <label
+                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Transporter
+                                                Name</label>
+                                            <input type="text" class="form-control" id="logTransporter"
+                                                placeholder="e.g. DHL, BlueDart" style="height: 48px" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label
+                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Vehicle
+                                                Number</label>
+                                            <input type="text" class="form-control font-monospace" id="logVehicleNo"
+                                                placeholder="ES 1234 XY" style="height: 48px" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label
+                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Driver
+                                                Name</label>
+                                            <input type="text" class="form-control" id="logDriverName"
+                                                placeholder="Driver Full Name" style="height: 48px" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label
+                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Driver
+                                                Contact</label>
+                                            <input type="text" class="form-control" id="logDriverContact"
+                                                placeholder="+34 XXX XXX XXX" style="height: 48px" required>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label
+                                                class="form-label small text-uppercase text-muted fw-bold ls-1">Specific
+                                                Instructions</label>
+                                            <textarea class="form-control" id="logRemarks" rows="3"
+                                                placeholder="Route details or delivery preference..."></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                                        <button type="button" class="btn btn-outline-secondary px-3 btn-sm"
+                                            onclick="$('#dispatchFormContainer').fadeOut();">Cancel</button>
+                                        <button type="submit" class="btn btn-primary px-4 btn-sm">Confirm &
+                                            Dispatch</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row mb-5">
-                        <div class="col-md-6">
-                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Billed To:</h6>
-                            <h4 class="fw-bold mb-1" id="pageInvoiceTo">Retailer Name</h4>
-                            <p class="text-muted mb-0">Spain Hub Partner</p>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Invoice Details:</h6>
-                            <p class="mb-1">Invoice ID: <span class="fw-bold font-monospace text-dark"
-                                    id="pageInvoiceId">#INV-000000</span></p>
-                            <p class="mb-0">Date: <span class="fw-bold" id="pageInvoiceDate">Jan 14, 2026</span></p>
-                        </div>
-                    </div>
+                </div> <!-- Close primary glass-card -->
 
-                    <!-- Invoice Items Table -->
-                    <div class="table-responsive bg-white border rounded-3 mb-4">
-                        <table class="table table-striped mb-0">
-                            <thead class="bg-dark text-white">
-                                <tr>
-                                    <th class="py-3 ps-4">Item Description</th>
-                                    <th class="py-3 text-center">Quantity</th>
-                                    <th class="py-3 text-end">Unit Price (EUR)</th>
-                                    <th class="py-3 text-end pe-4">Total (EUR)</th>
+                <!-- Dispatched History Section (Now in its own glass-card) -->
+                <div class="glass-card mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                <i class="fas fa-history me-2 text-primary"></i>Dispatched History
+                            </h5>
+                            <p class="text-muted small mb-0">Records of completed fleet assignments</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="renderDispatchedHistory()"><i
+                                class="fas fa-sync-alt me-1"></i> Refresh</button>
+                    </div>
+                    <div class="table-responsive bg-white rounded-4 border shadow-sm">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-uppercase">
+                                <tr class="small fw-bold border-bottom">
+                                    <th class="ps-4 py-3">Dispatch ID</th>
+                                    <th>Order ID</th>
+                                    <th>Transporter</th>
+                                    <th>Vehicle No</th>
+                                    <th>Driver</th>
+                                    <th>Destination</th>
+                                    <th class="text-end pe-4">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="pageInvoiceItems">
-                                <!-- Dynamic Items -->
-                            </tbody>
-                            <tfoot class="bg-light">
+                            <tbody id="dispatchedHistoryBody">
                                 <tr>
-                                    <td colspan="3" class="text-end fw-bold py-3">Subtotal:</td>
-                                    <td class="text-end py-3 pe-4 fw-bold" id="pageInvoiceSubtotal">€0.00</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold py-3 text-muted">Tax (15%):</td>
-                                    <td class="text-end py-3 pe-4 fw-bold text-muted" id="pageInvoiceTax">€0.00</td>
-                                </tr>
-                                <tr class="border-top border-2 border-primary">
-                                    <td colspan="3" class="text-end fw-bold py-4 fs-5">Grand Total:</td>
-                                    <td class="text-end py-4 pe-4 fw-bold fs-4 text-primary" id="pageInvoiceTotal">€0.00
+                                    <td colspan="7" class="text-center py-5 text-muted small">
+                                        No dispatched records found.
                                     </td>
                                 </tr>
-                            </tfoot>
+                            </tbody>
                         </table>
-                    </div>
-
-                    <!-- Footer Actions -->
-                    <div class="d-flex justify-content-end gap-3 no-print">
-                        <button class="btn btn-outline-secondary" onclick="window.print()">
-                            <i class="fas fa-print me-2"></i> Print Intent
-                        </button>
-                        <button class="btn btn-primary" onclick="$('#invoice-view').hide(); $('#orders').show();">
-                            <i class="fas fa-check me-2"></i> Done
-                        </button>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
     <!-- Invoice Modal (REMOVED/UNUSED now) -->
@@ -749,73 +789,6 @@
     </div>
     </div>
 
-    <!-- Invoice Modal (Restored) -->
-    <div class="modal fade" id="invoiceModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content glass-card border-0 p-0">
-                <div class="modal-header border-bottom-0 p-4 pb-0">
-                    <h5 class="modal-title fw-bold text-primary">
-                        <i class="fas fa-file-invoice me-2"></i>Official Tax Invoice
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="d-flex justify-content-between mb-4">
-                        <div>
-                            <h6 class="text-muted text-uppercase small fw-bold mb-1">Billed To:</h6>
-                            <h5 class="fw-bold mb-0" id="modalInvoiceTo">Retailer Name</h5>
-                        </div>
-                        <div class="text-end">
-                            <span
-                                class="badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill mb-2">
-                                <i class="fas fa-check-circle me-1"></i> PAID
-                            </span>
-                            <div class="small text-muted">Invoice ID: <span class="fw-bold text-dark font-monospace"
-                                    id="modalInvoiceId">#INV-000</span></div>
-                            <div class="small text-muted">Date: <span class="fw-bold text-dark"
-                                    id="modalInvoiceDate">Jan 14, 2026</span></div>
-                        </div>
-                    </div>
 
-                    <div class="table-responsive bg-light rounded-3 border mb-3">
-                        <table class="table table-borderless mb-0">
-                            <thead class="border-bottom">
-                                <tr class="text-muted small text-uppercase">
-                                    <th class="ps-3 py-2">Item</th>
-                                    <th class="text-center py-2">Qty</th>
-                                    <th class="text-end py-2">Price</th>
-                                    <th class="text-end pe-3 py-2">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalInvoiceItemsBody">
-                                <!-- Dynamic Items -->
-                            </tbody>
-                            <tfoot class="border-top">
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold pt-3">Subtotal:</td>
-                                    <td class="text-end fw-bold pt-3 pe-3" id="modalInvoiceSubtotal">€0.00</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold text-muted">Tax (15%):</td>
-                                    <td class="text-end fw-bold text-muted pe-3" id="modalInvoiceTax">€0.00</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold text-primary fs-5 pb-3">Grand Total:</td>
-                                    <td class="text-end fw-bold text-primary fs-5 pb-3 pe-3" id="modalInvoiceTotal">
-                                        €0.00</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 p-4 pt-0">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-                        <i class="fas fa-print me-2"></i> Print
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
 </html>

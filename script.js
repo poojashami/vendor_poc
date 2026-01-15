@@ -106,128 +106,10 @@ $(document).ready(function () {
     },
   ];
 
-  // ========== POST-DISPATCH STATE (Retail & Invoices) ==========
-  const retailerInventory = {
-    Madrid: [],
-    Barcelona: [],
-  };
+  const pendingDispatchOrders = []; // Orders waiting for logistics allocation
+  const dispatchedHistory = []; // History of fleet assignments
 
-  const generatedInvoices = [];
 
-  function renderRetailAndInvoices() {
-    // 1. Render Retail Stock Table
-    const levelRows = [];
-    // Calculate summaries per retailer (Destination Hub)
-    for (const [seller, items] of Object.entries(retailerInventory)) {
-      if (items.length === 0) continue;
-
-      let totalQty = 0;
-      let totalVal = 0;
-      items.forEach((i) => {
-        totalQty += i.qty;
-        totalVal += i.totalEUR;
-      });
-
-      levelRows.push(`
-        <tr>
-          <td><span class="fw-bold text-primary">${seller}</span></td>
-          <td>${new Date().toLocaleDateString()}</td>
-          <td>${items.length} types</td>
-          <td class="text-center fw-bold">${totalQty}</td>
-          <td class="text-end fw-bold">€${totalVal.toFixed(2)}</td>
-        </tr>
-      `);
-    }
-
-    if (levelRows.length === 0) {
-      $("#retailLevelTableBody").html(
-        '<tr><td colspan="5" class="text-center text-muted py-4">No retail stock updates yet.</td></tr>'
-      );
-    } else {
-      $("#retailLevelTableBody").html(levelRows.join(""));
-    }
-
-    // 2. Render Invoices Table
-    const invRows = generatedInvoices.map(
-      (inv) => `
-      <tr>
-        <td><span class="badge bg-light text-dark border">${inv.id}</span></td>
-        <td>${inv.retailer}</td>
-        <td>${inv.date}</td>
-        <td class="fw-bold text-success">€${inv.amount.toFixed(2)}</td>
-        <td><span class="badge bg-success">Invoiced</span></td>
-        <td><button class="btn btn-sm btn-outline-primary" onclick="viewInvoice('${
-          inv.id
-        }')"><i class="fas fa-eye"></i></button></td>
-      </tr>
-    `
-    );
-
-    if (invRows.length === 0) {
-      $("#invoiceTableBody").html(
-        '<tr><td colspan="6" class="text-center text-muted py-4">No invoices generated yet.</td></tr>'
-      );
-    } else {
-      $("#invoiceTableBody").html(invRows.join(""));
-    }
-  }
-
-  // Global Function to View Invoice (Modal Version)
-  window.viewInvoice = function (id) {
-    const inv = generatedInvoices.find((i) => i.id === id);
-    if (!inv) return;
-
-    // Populate Modal Elements
-    $("#modalInvoiceId").text("#" + inv.id);
-    $("#modalInvoiceTo").text(inv.retailer);
-    $("#modalInvoiceDate").text(inv.date);
-
-    const itemsBody = $("#modalInvoiceItemsBody");
-    itemsBody.empty();
-
-    let calculatedSubtotal = 0;
-
-    inv.items.forEach((item) => {
-      // Logic for Multi-Currency Handling
-      let priceEUR = 0;
-      let totalEUR = 0;
-
-      if (typeof item.amount === "number") {
-        // NEW LOGIC: Stored directly as Euro
-        totalEUR = item.amount;
-        priceEUR = totalEUR / parseInt(item.sellingQty);
-      } else {
-        // OLD LOGIC: Stored as INR String (Backward Compatibility)
-        const priceINR =
-          parseFloat(item.amount.replace("₹", "").replace(/,/g, "")) /
-          parseInt(item.sellingQty);
-        priceEUR = priceINR / 90;
-        totalEUR = priceEUR * parseInt(item.sellingQty);
-      }
-
-      calculatedSubtotal += totalEUR;
-
-      itemsBody.append(`
-            <tr>
-                <td class="ps-3 fw-medium">${item.name}</td>
-                <td class="text-center">${item.sellingQty}</td>
-                <td class="text-end">€${priceEUR.toFixed(2)}</td>
-                <td class="text-end pe-3 fw-bold">€${totalEUR.toFixed(2)}</td>
-            </tr>
-          `);
-    });
-
-    const tax = calculatedSubtotal * 0.15;
-    const grandTotal = calculatedSubtotal + tax;
-
-    $("#modalInvoiceSubtotal").text("€" + calculatedSubtotal.toFixed(2));
-    $("#modalInvoiceTax").text("€" + tax.toFixed(2));
-    $("#modalInvoiceTotal").text("€" + grandTotal.toFixed(2));
-
-    // Show Modal
-    const modal = new bootstrap.Modal(document.getElementById("invoiceModal"));
-    modal.show();
-  };
 
   // Render Product Grid
   function renderProducts() {
@@ -378,9 +260,8 @@ $(document).ready(function () {
       const card = `
                 <div class="col-6 col-md-4 col-lg-3">
                     <div class="material-card h-100" data-id="${p.id}">
-                        <div class="material-img" style="background-image: url('${
-                          p.img
-                        }')">
+                        <div class="material-img" style="background-image: url('${p.img
+        }')">
                             <div class="check-overlay">
                                 <i class="fas fa-check"></i>
                             </div>
@@ -390,9 +271,8 @@ $(document).ready(function () {
                             <div class="d-flex card-inputs" onclick="event.stopPropagation()">
                                 <div class="mb-2">
                                     <label class="form-label small mb-0">Price (₹)</label>
-                                    <input type="number" class="form-control form-control-sm mat-price" value="${
-                                      p.defaultPrice
-                                    }" step="0.01" min="0">
+                                    <input type="number" class="form-control form-control-sm mat-price" value="${p.defaultPrice
+        }" step="0.01" min="0">
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small mb-0">Quantity</label>
@@ -401,8 +281,8 @@ $(document).ready(function () {
                                 <div class=" bg-light p-2 rounded">
                                    <label class="form-label small mb-0">Total</label></br>
                                     <span class="small fw-bold mat-total text-primary">₹${p.defaultPrice.toFixed(
-                                      2
-                                    )}</span>
+          2
+        )}</span>
                                 </div>
                             </div>
                         </div>
@@ -507,16 +387,16 @@ $(document).ready(function () {
 
     alert(
       "Order Submitted Successfully!\n\n" +
-        "Order ID: " +
-        newShipmentId +
-        "\n" +
-        "Sent to: " +
-        newShipment.warehouse +
-        " Warehouse\n" +
-        "Total: " +
-        formData.grandTotal +
-        "\n\n" +
-        "Check 'Warehouse Acceptance' tab to approve stock."
+      "Order ID: " +
+      newShipmentId +
+      "\n" +
+      "Sent to: " +
+      newShipment.warehouse +
+      " Warehouse\n" +
+      "Total: " +
+      formData.grandTotal +
+      "\n\n" +
+      "Check 'Warehouse Acceptance' tab to approve stock."
     );
 
     // Reset Form
@@ -598,18 +478,32 @@ $(document).ready(function () {
 
   // ========== CENTRALIZED INVENTORY & RETAIL DISPATCH LOGIC ==========
 
-  // 1. Central Inventory State (The "Hardcoded" Data Source)
-  const warehouseInventory = {
-    "Floral Summer Maxidress": 120, // High stock
-    "Silk Embroidered Saree": 45,
-    "High-Waist Trousers": 200,
-    "Designer Kurti Set": 75,
-    "Cotton Fabric": 500,
-    "Silk Thread": 1000,
-    "Metal Buttons": 2000,
-    "Zippers Pack": 150,
-    "Packaging Box": 0, // Out of stock example
-    "Leather Belt": 80,
+  // 1. Central Inventory State (Multi-Hub)
+  const hubInventories = {
+    Delhi: {
+      "Floral Summer Maxidress": 120,
+      "Silk Embroidered Saree": 45,
+      "High-Waist Trousers": 200,
+      "Designer Kurti Set": 75,
+      "Cotton Fabric": 500,
+      "Silk Thread": 1000,
+      "Metal Buttons": 2000,
+      "Zippers Pack": 150,
+      "Packaging Box": 0,
+      "Leather Belt": 80,
+    },
+    Madrid: {
+      "Floral Summer Maxidress": 50,
+      "Silk Embroidered Saree": 25,
+      "High-Waist Trousers": 80,
+      "Designer Kurti Set": 40,
+    },
+    Barcelona: {
+      "Floral Summer Maxidress": 45,
+      "Silk Embroidered Saree": 20,
+      "High-Waist Trousers": 70,
+      "Designer Kurti Set": 35,
+    },
   };
 
   const itemPrices = {
@@ -625,16 +519,28 @@ $(document).ready(function () {
     "Leather Belt": 25.0,
   };
 
+  // Function to update Dashboard KPI for Warehouse Stock (Total across all hubs)
+  function updateWarehouseKPI() {
+    let total = 0;
+    Object.values(hubInventories).forEach((hub) => {
+      total += Object.values(hub).reduce((a, b) => a + b, 0);
+    });
+    $("#totalWarehouseStock").text(total);
+  }
+
   // ========== SELLER ORDERS / RETAIL DISPATCH LOGIC (VISUAL GRID) ==========
 
-  // Function to render the Distributor Product Grid (from Warehouse Inventory)
-  function renderDistributorGrid() {
+  // Function to render the Distributor Product Grid for a specific hub
+  function renderDistributorGrid(hub = "Madrid") {
+    updateWarehouseKPI();
     const container = $("#distributor-product-grid");
     container.empty();
 
-    // Iterate over warehouse inventory
+    const inventory = hubInventories[hub] || hubInventories["Madrid"];
+
+    // Iterate over selected hub inventory
     let index = 0;
-    for (const [itemName, currentStock] of Object.entries(warehouseInventory)) {
+    for (const [itemName, currentStock] of Object.entries(inventory)) {
       index++;
       // Try to find image from products array, or use a default
       const productMatch = products.find((p) => p.name === itemName);
@@ -647,9 +553,8 @@ $(document).ready(function () {
 
       const card = `
         <div class="col-6 col-md-4 col-lg-3">
-            <div class="material-card h-100 ${opacityClass}" data-name="${itemName}" style="${
-        isOutOfStock ? "pointer-events: none;" : ""
-      }">
+            <div class="material-card h-100 ${opacityClass}" data-name="${itemName}" style="${isOutOfStock ? "pointer-events: none;" : ""
+        }">
                 <div class="material-img position-relative" style="background-image: url('${imgUrl}')">
                     <!-- Stock Top Left -->
                     <span class="position-absolute top-0 start-0 m-2 badge bg-primary shadow-sm">Stock: ${currentStock}</span>
@@ -657,9 +562,8 @@ $(document).ready(function () {
                     <!-- Checkbox Top Right -->
                     <div class="position-absolute top-0 end-0 m-2">
                          <div class="form-check">
-                            <input class="form-check-input card-checkbox" type="checkbox" style="transform: scale(1.2); cursor: pointer;" ${
-                              isOutOfStock ? "disabled" : ""
-                            }>
+                            <input class="form-check-input card-checkbox" type="checkbox" style="transform: scale(1.2); cursor: pointer;" ${isOutOfStock ? "disabled" : ""
+        }>
                         </div>
                     </div>
                 </div>
@@ -708,7 +612,7 @@ $(document).ready(function () {
   }
 
   // Initial Render
-  renderDistributorGrid();
+  renderDistributorGrid("Madrid");
 
   // Interaction: Select Card (Toggle)
   $(document).on(
@@ -777,15 +681,41 @@ $(document).ready(function () {
       grandTotal += price * qty;
     });
     $("#distGrandTotal").text("€" + grandTotal.toFixed(2));
+    $("#distTotalAmount").val(grandTotal.toFixed(2));
+    calculatePendingAmount();
   }
+
+  function calculatePendingAmount() {
+    const total = parseFloat($("#distTotalAmount").val()) || 0;
+    const received = parseFloat($("#distAmountReceived").val()) || 0;
+    const pending = total - received;
+    $("#distAmtPending").val(pending.toFixed(2));
+  }
+
+  $(document).on("input", "#distAmountReceived", calculatePendingAmount);
+
+  // Set default Booking Date to today
+  $("#distBookingDate").val(new Date().toISOString().split("T")[0]);
 
   // Cancel Button
   $("#cancelDistBtn").click(function () {
     if (confirm("Clear all selections?")) {
       renderDistributorGrid();
       updateDistributorSelectionState();
-      $("#distributorForm")[0].reset();
+      $("#distBookingDate").val(new Date().toISOString().split("T")[0]);
+      $("#distAmountReceived").val(0);
+      calculatePendingAmount();
     }
+  });
+
+  // Initial Setup
+  updateWarehouseKPI();
+
+  // Interaction: Hub Change (Madrid/Barcelona)
+  $(document).on("change", "input[name='destinationHub']", function () {
+    const hub = $(this).val();
+    renderDistributorGrid(hub);
+    updateDistributorSelectionState(); // Reset grand total since cards reset
   });
 
   // Form submission
@@ -838,50 +768,44 @@ $(document).ready(function () {
 
     // --- POST DISPATCH ACTIONS ---
 
-    // 1. Deduct from Central Inventory (Delhi)
+    // 1. Deduct from Hub Inventory
+    const sourceHub =
+      $("input[name='destinationHub']:checked").val() || "Madrid";
     materials.forEach((m) => {
-      if (warehouseInventory[m.name]) {
-        warehouseInventory[m.name] -= m.sellingQty; // Reduce Stock
+      if (
+        hubInventories[sourceHub] &&
+        hubInventories[sourceHub][m.name] !== undefined
+      ) {
+        hubInventories[sourceHub][m.name] -= m.sellingQty; // Reduce Stock
       }
-
-      // Update "Retailer/Destination" Stock (Mock)
-      if (!retailerInventory[destination]) retailerInventory[destination] = [];
-      retailerInventory[destination].push({
-        name: m.name,
-        qty: m.sellingQty,
-        totalEUR: m.totalEUR,
-      });
     });
 
-    // 2. Generate Invoice
-    const invoiceId = "INV-" + Date.now().toString().slice(-6);
-    generatedInvoices.unshift({
-      id: invoiceId,
-      retailer: destination, // Destination is effectively the retailer/branch here
+    // 2. Generate Order ID
+    const sellerName = $("#distSeller").val() || "General Retailer";
+    const orderId = "ORD-" + Date.now().toString().slice(-6);
+
+    // 3. Move to Dispatch Queue (NEW)
+    pendingDispatchOrders.unshift({
+      id: orderId,
+      destination: destination,
+      amount: totalDispatchValue,
+      items: materials,
       date: new Date().toLocaleDateString(),
-      amount: totalDispatchValue, // Already in Euro
-      items: materials.map((m) => ({
-        name: m.name,
-        sellingQty: m.sellingQty,
-        amount: m.totalEUR, // Storing pure Euro value now
-      })),
-      status: "Paid",
+      seller: sellerName,
     });
+    renderPendingDispatchList();
 
-    // 3. UI Feedback
+    // 4. UI Feedback
     alert(
-      `Success! Dispatched to ${destination}.\n\nInvoice ${invoiceId} Generated.\nTotal Value: €${totalDispatchValue.toFixed(
-        2
-      )}`
+      `🎉 Success!\nOrder Booking ID: ${orderId}\n\nThe order has been moved to 'Dispatch Material' for logistics assignment.`
     );
 
     // Reset Form
     $("#distributorForm")[0].reset();
+    $("#distBookingDate").val(new Date().toISOString().split("T")[0]);
+    $("#distAmountReceived").val(0);
     renderDistributorGrid(); // Re-render to show updated (reduced) stock
     updateDistributorSelectionState();
-
-    // Force Render of new data
-    renderRetailAndInvoices();
   });
   // ========== WAREHOUSE ACCEPTANCE LOGIC (SAFE ADDITION) ==========
   // shipments array moved to top of file
@@ -1049,9 +973,8 @@ $(document).ready(function () {
                    <td>
                        <div class="d-flex flex-column">
                            <span class="fw-bold small">${itemSummary}</span>
-                           <span class="text-muted small">${
-                             s.items.length
-                           } items</span>
+                           <span class="text-muted small">${s.items.length
+        } items</span>
                        </div>
                    </td>
                    <td class="fw-bold">${s.grandTotal}</td>
@@ -1080,4 +1003,133 @@ $(document).ready(function () {
     const filter = $(this).data("filter");
     renderShipments(filter);
   });
+
+  // ========== Dispatch Material LOGIC ==========
+
+  function renderPendingDispatchList() {
+    const container = $("#pendingDispatchList");
+    const countBadge = $("#pendingDispatchCount");
+    container.empty();
+    countBadge.text(pendingDispatchOrders.length);
+    const mainRow = $("#dispatchMainRow");
+    const allClear = $("#dispatchAllClear");
+
+    if (pendingDispatchOrders.length === 0) {
+      mainRow.hide();
+      allClear.show();
+      return;
+    } else {
+      mainRow.show();
+      allClear.hide();
+    }
+
+    pendingDispatchOrders.forEach((order) => {
+      container.append(`
+        <a href="javascript:void(0)" class="list-group-item list-group-item-action p-3" onclick="selectOrderForDispatch('${order.id
+        }')">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="font-monospace fw-bold text-primary">${order.id}</span>
+            <span class="badge bg-warning-subtle text-warning border border-warning small">Pending</span>
+          </div>
+          <div class="small fw-bold">${order.destination} Hub</div>
+          <div class="d-flex justify-content-between mt-2">
+            <span class="text-muted smaller">${order.items.length} items</span>
+            <span class="fw-bold text-dark">€${order.amount.toFixed(2)}</span>
+          </div>
+        </a>
+      `);
+    });
+  }
+
+  window.selectOrderForDispatch = function (id) {
+    const order = pendingDispatchOrders.find((o) => o.id === id);
+    if (!order) return;
+
+    $("#activeDispatchOrderId").text(id);
+    $("#dispatchFormContainer").fadeIn();
+
+    // Reset inputs
+    $("#logisticsEntryForm")[0].reset();
+  };
+
+  $("#logisticsEntryForm").submit(function (e) {
+    e.preventDefault();
+    const orderId = $("#activeDispatchOrderId").text();
+    const orderIdx = pendingDispatchOrders.findIndex((o) => o.id === orderId);
+
+    if (orderIdx === -1) return;
+
+    const transporter = $("#logTransporter").val();
+    const vehicle = $("#logVehicleNo").val();
+    const driver = $("#logDriverName").val();
+
+    // Move to History (NEW)
+    const dispatchId = "DSP-" + Math.floor(1000 + Math.random() * 9000);
+    dispatchedHistory.unshift({
+      id: dispatchId,
+      orderId: orderId,
+      transporter: transporter,
+      vehicle: vehicle,
+      driver: driver,
+      destination: pendingDispatchOrders[orderIdx].destination,
+      status: "In-Transit",
+    });
+    renderDispatchedHistory();
+
+    // Final alert
+    alert(
+      `Order ${orderId} has been successfully dispatched via ${transporter} (${vehicle})!\n\nDispatch ID: ${dispatchId}`
+    );
+
+    // Remove from pending
+    pendingDispatchOrders.splice(orderIdx, 1);
+    renderPendingDispatchList();
+
+    // Hide form
+    $("#dispatchFormContainer").hide();
+  });
+
+  window.renderDispatchedHistory = function () {
+    const body = $("#dispatchedHistoryBody");
+    body.empty();
+
+    if (dispatchedHistory.length === 0) {
+      body.append(`
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted small">
+            No dispatched records found.
+          </td>
+        </tr>
+      `);
+      return;
+    }
+
+    dispatchedHistory.forEach((record) => {
+      body.append(`
+        <tr>
+          <td class="ps-4 fw-bold font-monospace text-primary">${record.id}</td>
+          <td class="small fw-bold">${record.orderId}</td>
+          <td>${record.transporter}</td>
+          <td class="font-monospace smaller">${record.vehicle}</td>
+          <td>${record.driver}</td>
+          <td><span class="badge bg-light text-dark">${record.destination}</span></td>
+          <td class="text-end pe-4">
+            <span class="badge bg-primary rounded-pill px-3 py-2 small fw-medium">
+              <i class="fas fa-truck me-1"></i> ${record.status}
+            </span>
+          </td>
+        </tr>
+      `);
+    });
+  };
+
+  // Seed with one mock order for demo
+  pendingDispatchOrders.push({
+    id: "ORD-8821",
+    destination: "Madrid",
+    amount: 1450.0,
+    items: [{}, {}],
+    date: "2026-01-14",
+  });
+  renderPendingDispatchList();
 });
